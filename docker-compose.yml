@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:16-alpine
     container_name: buyzenix_db
+    restart: unless-stopped
     env_file:
       - .env
     environment:
@@ -19,6 +20,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: buyzenix_redis
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -29,6 +31,7 @@ services:
     build:
       context: ./app
     container_name: buyzenix_web
+    restart: unless-stopped
     env_file:
       - .env
     environment:
@@ -49,6 +52,7 @@ services:
     build:
       context: ./app
     container_name: buyzenix_celery
+    restart: unless-stopped
     command: celery -A buyzenix worker -l info
     env_file:
       - .env
@@ -67,8 +71,9 @@ services:
   nginx:
     image: nginx:1.27-alpine
     container_name: buyzenix_nginx
+    restart: unless-stopped
     ports:
-      - "8000:80"
+      - "${HTTP_PORT:-8000}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_volume:/app/staticfiles

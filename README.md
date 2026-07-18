@@ -44,6 +44,24 @@ The app seeds a sample catalog on first run and creates a superuser:
 > clashing with common local services. Change the `ports` mapping in
 > `docker-compose.yml` if you prefer `80:80`.
 
+## VPS Deployment
+
+For `buyzenix.com`, run this on the VPS as `root` from the repo root:
+
+```bash
+bash deploy_vps.sh
+```
+
+It will:
+
+- install Docker and basic tooling
+- clone or update the repository under `/opt/web-env/BuyZenix`
+- generate production `.env` values
+- set the hostname to `buyzenix.com`
+- start the full stack on port `80`
+
+If you need to redeploy later, rerun the same script.
+
 ## Useful commands
 
 ```bash
