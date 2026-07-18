@@ -33,6 +33,7 @@ services:
       dockerfile: app/Dockerfile
     container_name: buyzenix_web
     restart: unless-stopped
+    entrypoint: ["sh", "/app/entrypoint.sh"]
     env_file:
       - .env
     environment:
@@ -54,6 +55,7 @@ services:
       dockerfile: app/Dockerfile
     container_name: buyzenix_celery
     restart: unless-stopped
+    entrypoint: []
     command: celery -A buyzenix worker -l info
     env_file:
       - .env
