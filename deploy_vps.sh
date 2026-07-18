@@ -115,6 +115,7 @@ EOF
 
 deploy_stack() {
   cd "$APP_DIR"
+  docker compose down --remove-orphans >/dev/null 2>&1 || true
   HTTP_PORT="$HTTP_PORT" docker compose up -d --build
 }
 
