@@ -25,9 +25,27 @@ install_packages() {
 
 install_docker() {
   if ! command -v docker >/dev/null 2>&1; then
-    curl -fsSL https://get.docker.com | sh
+    if command -v dnf >/dev/null 2>&1; then
+      dnf install -y dnf-plugins-core
+      dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    elif command -v apt-get >/dev/null 2>&1; then
+      curl -fsSL https://get.docker.com | sh
+    else
+      echo "Unsupported package manager for Docker installation."
+      exit 1
+    fi
   fi
   systemctl enable --now docker
+}
+
+open_firewall() {
+  if command -v firewall-cmd >/dev/null 2>&1; then
+    systemctl enable --now firewalld >/dev/null 2>&1 || true
+    firewall-cmd --permanent --add-service=http >/dev/null 2>&1 || true
+    firewall-cmd --permanent --add-service=https >/dev/null 2>&1 || true
+    firewall-cmd --reload >/dev/null 2>&1 || true
+  fi
 }
 
 prepare_hostname() {
@@ -82,6 +100,7 @@ deploy_stack() {
 
 install_packages
 install_docker
+open_firewall
 prepare_hostname
 sync_repo
 write_env
