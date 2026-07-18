@@ -86,8 +86,16 @@ sync_repo() {
 
 write_env() {
   local secret_key postgres_password server_ip
-  secret_key="$(openssl rand -base64 48 | tr -d '\n')"
-  postgres_password="$(openssl rand -base64 24 | tr -d '/+=\n' | cut -c1-24)"
+  if [[ -f "$APP_DIR/.env" ]]; then
+    # Reuse existing secrets so the running PostgreSQL volume keeps working.
+    # shellcheck disable=SC1090
+    set -a
+    . "$APP_DIR/.env"
+    set +a
+  fi
+
+  secret_key="${SECRET_KEY:-$(openssl rand -base64 48 | tr -d '\n')}"
+  postgres_password="${POSTGRES_PASSWORD:-$(openssl rand -base64 24 | tr -d '/+=\n' | cut -c1-24)}"
   server_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
   cat > "$APP_DIR/.env" <<EOF
