@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} | BuyZenix{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:800px">
+    <div class="form-card" style="padding:2rem">
+      <h1 style="margin-bottom:1rem">{{ page.title }}</h1>
+      <div style="line-height:1.8;color:var(--text-muted)">{{ page.content|safe }}</div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% load static %}
+<div class="cart-dropdown">
+  {% if cart %}
+    {% for item in cart %}
+      <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span>{{ item.product.name }}</span>
+        <span style="margin-left:auto;color:var(--text-muted)">×{{ item.quantity }}</span>
+      </div>
+    {% endfor %}
+    <a class="btn btn-primary btn-block" href="{% url 'cart:cart_detail' %}" style="margin-top:10px">View cart</a>
+  {% else %}
+    <p style="margin:0">Cart is empty.</p>
+  {% endif %}
+</div>

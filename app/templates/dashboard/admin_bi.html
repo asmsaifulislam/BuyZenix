@@ -1,0 +1,647 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+{% block dash_title %}BI Dashboard{% endblock %}
+{% block dash_heading %}Business Intelligence{% endblock %}
+
+{% block dash_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block dash_content %}
+
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:150px">
+        <label style="display:block;font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--muted)">Customer</label>
+        <select name="customer_type" class="form-input" style="padding:.45rem .65rem;font-size:.85rem">
+          <option value="">All Customers</option>
+          <option value="new" {% if f_customer == "new" %}selected{% endif %}>New</option>
+          <option value="returning" {% if f_customer == "returning" %}selected{% endif %}>Returning</option>
+          <option value="vip" {% if f_customer == "vip" %}selected{% endif %}>VIP</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--muted)">Country</label>
+        <select name="country" class="form-input" style="padding:.45rem .65rem;font-size:.85rem">
+          <option value="">All Countries</option>
+          {% for c in all_countries %}<option value="{{ c }}" {% if f_country == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--muted)">State</label>
+        <select name="state" class="form-input" style="padding:.45rem .65rem;font-size:.85rem">
+          <option value="">All States</option>
+          {% for s in all_states %}<option value="{{ s }}" {% if f_state == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--muted)">City</label>
+        <select name="city" class="form-input" style="padding:.45rem .65rem;font-size:.85rem">
+          <option value="">All Cities</option>
+          {% for ci in all_cities %}<option value="{{ ci }}" {% if f_city == ci %}selected{% endif %}>{{ ci }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--muted)">Date From</label>
+        <input type="date" name="date_from" value="{{ f_date_from }}" class="form-input" style="padding:.45rem .65rem;font-size:.85rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--muted)">Date To</label>
+        <input type="date" name="date_to" value="{{ f_date_to }}" class="form-input" style="padding:.45rem .65rem;font-size:.85rem">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="display:block;font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--muted)">Granularity</label>
+        <select name="granularity" class="form-input" style="padding:.45rem .65rem;font-size:.85rem">
+          <option value="daily" {% if f_granularity == "daily" %}selected{% endif %}>Daily</option>
+          <option value="weekly" {% if f_granularity == "weekly" %}selected{% endif %}>Weekly</option>
+          <option value="monthly" {% if f_granularity == "monthly" %}selected{% endif %}>Monthly</option>
+          <option value="yearly" {% if f_granularity == "yearly" %}selected{% endif %}>Yearly</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+        <a href="{% url 'dashboard:admin_bi' %}" class="btn btn-outline btn-sm">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button onclick="exportAllCSV()" class="btn btn-sm btn-outline" style="font-size:.78rem">📥 Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.78rem">🖨️ Print</button>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Revenue</div>
+    <div class="value">{% money total_revenue %}</div>
+    <div class="sub" style="color:{% if revenue_change >= 0 %}var(--green){% else %}var(--red){% endif %}">
+      {% if revenue_change >= 0 %}+{% endif %}{{ revenue_change }}% vs previous period
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Orders</div>
+    <div class="value">{{ total_orders }}</div>
+    <div class="sub" style="color:{% if orders_change >= 0 %}var(--green){% else %}var(--red){% endif %}">
+      {% if orders_change >= 0 %}+{% endif %}{{ orders_change }}% vs previous period
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Avg Order Value</div>
+    <div class="value">{% money aov %}</div>
+    <div class="sub">{{ unique_buyers }} unique buyers</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Conversion Rate</div>
+    <div class="value" style="color:{% if conversion_rate >= 10 %}var(--green){% elif conversion_rate >= 5 %}var(--orange){% else %}var(--red){% endif %}">{{ conversion_rate }}%</div>
+    <div class="sub">{{ unique_buyers }} / {{ total_users }} users</div>
+  </div>
+</div>
+
+<!-- ═══ ALL REPORTS SUMMARY ═══ -->
+<h2 style="font-size:1.05rem;font-weight:700;margin:1.5rem 0 1rem;color:var(--text)">Reports Overview</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;margin-bottom:2rem">
+  <!-- Sale Report Summary -->
+  <div class="card" style="border-left:4px solid var(--primary)">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Sale Report</div>
+        <a href="{% url 'dashboard:admin_sale_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Fulfillment Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if sr_fulfillment >= 80 %}var(--green){% else %}var(--orange){% endif %}">{{ sr_fulfillment }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Cancel Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if sr_cancel_rate <= 5 %}var(--green){% else %}var(--red){% endif %}">{{ sr_cancel_rate }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Paid Orders</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--blue)">{{ paid_count }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Total Items Sold</div>
+          <div style="font-size:1.1rem;font-weight:700">{{ total_orders }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Report Summary -->
+  <div class="card" style="border-left:4px solid var(--purple)">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Customer Report</div>
+        <a href="{% url 'dashboard:admin_customer_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Total Customers</div>
+          <div style="font-size:1.1rem;font-weight:700">{{ cr_total_customers }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Retention Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if cr_retention >= 30 %}var(--green){% elif cr_retention >= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ cr_retention }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">New Customers</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--blue)">{{ cr_new }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Returning</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--green)">{{ cr_returning }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supplier Report Summary -->
+  <div class="card" style="border-left:4px solid var(--orange)">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Supplier Performance</div>
+        <a href="{% url 'dashboard:admin_supplier_performance' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">On-Time Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if sp_on_time_rate >= 90 %}var(--green){% elif sp_on_time_rate >= 70 %}var(--orange){% else %}var(--red){% endif %}">{{ sp_on_time_rate }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Defect Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if sp_defect_rate <= 5 %}var(--green){% elif sp_defect_rate <= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ sp_defect_rate }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Supplier Spend</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--primary)">৳{{ sp_total_spend|floatformat:0 }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Deliveries</div>
+          <div style="font-size:1.1rem;font-weight:700">{{ sp_on_time }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Report Summary -->
+  <div class="card" style="border-left:4px solid #06b6d4">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Product Report</div>
+        <a href="{% url 'dashboard:admin_product_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Inventory Health</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if pr_stock_health >= 70 %}var(--green){% elif pr_stock_health >= 40 %}var(--orange){% else %}var(--red){% endif %}">{{ pr_stock_health }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Return Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if pr_return_rate <= 5 %}var(--green){% elif pr_return_rate <= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ pr_return_rate }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Low/Out Stock</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if pr_low_stock > 0 %}var(--orange){% else %}var(--green){% endif %}">{{ pr_low_stock }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Products</div>
+          <div style="font-size:1.1rem;font-weight:700">{{ pr_total_products }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Marketing Report Summary -->
+  <div class="card" style="border-left:4px solid #ec4899">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Marketing Report</div>
+        <a href="{% url 'dashboard:admin_marketing_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">CTR</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if mk_ctr >= 4 %}var(--green){% elif mk_ctr >= 2 %}var(--orange){% else %}var(--red){% endif %}">{{ mk_ctr }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">ROI</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if mk_roi >= 100 %}var(--green){% elif mk_roi >= 0 %}var(--orange){% else %}var(--red){% endif %}">{{ mk_roi }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Impressions</div>
+          <div style="font-size:1.1rem;font-weight:700">{{ mk_total_impressions }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Conversions</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--green)">{{ mk_conversions }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Operations Report Summary -->
+  <div class="card" style="border-left:4px solid #6366f1">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Operations Report</div>
+        <a href="{% url 'dashboard:admin_operations_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Fulfillment</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if op_sla >= 90 %}var(--green){% else %}var(--orange){% endif %}">{{ op_sla }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Delay Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if op_delay_rate <= 5 %}var(--green){% else %}var(--red){% endif %}">{{ op_delay_rate }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Pick Accuracy</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if op_pick_accuracy >= 98 %}var(--green){% else %}var(--orange){% endif %}">{{ op_pick_accuracy }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Turnover</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--blue)">{{ op_turnover }}x</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Finance Report Summary -->
+  <div class="card" style="border-left:4px solid #10b981">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Finance Report</div>
+        <a href="{% url 'dashboard:admin_finance_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Gross Margin</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if fi_gross_margin >= 40 %}var(--green){% elif fi_gross_margin >= 25 %}var(--orange){% else %}var(--red){% endif %}">{{ fi_gross_margin }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Net Margin</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if fi_net_margin >= 15 %}var(--green){% elif fi_net_margin >= 5 %}var(--orange){% else %}var(--red){% endif %}">{{ fi_net_margin }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Refund Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if fi_refund_rate <= 3 %}var(--green){% elif fi_refund_rate <= 8 %}var(--orange){% else %}var(--red){% endif %}">{{ fi_refund_rate }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Cash Flow</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if fi_cash_flow >= 0 %}var(--green){% else %}var(--red){% endif %}">৳{{ fi_cash_flow|floatformat:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- VAT & Tax Report Summary -->
+  <div class="card" style="border-left:4px solid #6366f1">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">VAT & Tax Report</div>
+        <a href="{% url 'dashboard:admin_tax_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">BD Net VAT</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if tx_bd_vat >= 0 %}var(--orange){% else %}var(--green){% endif %}">৳{{ tx_bd_vat|floatformat:0 }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Intl Tax</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--red)">৳{{ tx_intl_tax|floatformat:0 }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Global Tax %</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if tx_tax_pct <= 20 %}var(--green){% elif tx_tax_pct <= 30 %}var(--orange){% else %}var(--red){% endif %}">{{ tx_tax_pct }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Refund Rate</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--green)">{{ tx_refund_rate }}%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Product Demand Summary -->
+  <div class="card" style="border-left:4px solid #f59e0b">
+    <div class="card-body" style="padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:.9rem">Demand Dashboard</div>
+        <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:3px 10px">View Full</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Trade Balance</div>
+          <div style="font-size:1.1rem;font-weight:700;color:{% if dm_trade_bal >= 0 %}var(--green){% else %}var(--red){% endif %}">{{ dm_trade_bal }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">BD Export Share</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--blue)">{{ dm_export_share }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Global Avg Price</div>
+          <div style="font-size:1.1rem;font-weight:700;color:#8b5cf6">${{ dm_global_price }}</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--muted)">Target Market</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--green)">US / DE / UK</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem">
+  <div class="card">
+    <div class="card-header"><h3>Revenue Trend</h3></div>
+    <div class="card-body">
+      <canvas id="revenueTrendChart" height="240"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Customer Distribution</h3></div>
+    <div class="card-body">
+      <canvas id="customerChart" height="240"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+  <div class="card">
+    <div class="card-header"><h3>Orders by Region</h3></div>
+    <div class="card-body">
+      <canvas id="regionChart" height="240"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Sales by City</h3></div>
+    <div class="card-body">
+      <canvas id="cityChart" height="240"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-header" style="justify-content:space-between">
+    <h3>Sales Heatmap - Bangladesh</h3>
+    <div style="display:flex;gap:12px;align-items:center;font-size:.75rem;color:var(--muted)">
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(79,70,229,.3);vertical-align:middle"></span> Low</span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(234,88,12,.6);vertical-align:middle"></span> Medium</span>
+      <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(220,38,38,.8);vertical-align:middle"></span> High</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div id="salesMap" style="height:450px;width:100%;position:relative;z-index:0"></div>
+  </div>
+</div>
+
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+  <div class="card">
+    <div class="card-header"><h3>Top Products</h3></div>
+    <div class="card-body" style="padding:0">
+      <table>
+        <thead><tr><th>Product</th><th>Sold</th><th>Revenue</th></tr></thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr><td>{{ p.product__name }}</td><td>{{ p.total_sold }}</td><td>{% money p.total_revenue %}</td></tr>
+          {% empty %}<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:1.5rem">No data yet</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Low Stock Alert</h3></div>
+    <div class="card-body" style="padding:0">
+      <table>
+        <thead><tr><th>Product</th><th>Stock</th></tr></thead>
+        <tbody>
+          {% for p in low_stock %}
+          <tr><td>{{ p.name }}</td><td><span class="badge {% if p.stock == 0 %}badge-red{% else %}badge-yellow{% endif %}">{{ p.stock }}</span></td></tr>
+          {% empty %}<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:1.5rem">All products well stocked</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:0">
+  <div class="card-header"><h3>Recent Orders</h3></div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrap">
+    <table id="ordersTable">
+      <thead><tr><th>#</th><th>Customer</th><th>City</th><th>Country</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for o in recent_orders %}
+        <tr>
+          <td>#{{ o.id }}</td>
+          <td>{{ o.first_name }} {{ o.last_name }}</td>
+          <td>{{ o.city }}</td>
+          <td>{{ o.country }}</td>
+          <td><span class="badge badge-{% if o.status == 'delivered' %}green{% elif o.status == 'cancelled' %}red{% elif o.status == 'paid' %}blue{% else %}yellow{% endif %}">{{ o.get_status_display }}</span></td>
+          <td>{% money o.get_total_cost %}</td>
+          <td>{{ o.created|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1.5rem">No orders match filters</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  .leaflet-container { z-index: 1 !important; }
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    #salesMap { display:none !important; }
+    body { background:#fff; }
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  var trendData = {{ revenue_trend|safe }};
+  var regionData = {{ region_data|safe }};
+  var custData = {{ customer_type_data|safe }};
+  var heatData = {{ heatmap_data|safe }};
+
+  // --- Revenue Trend (Line) ---
+  if(trendData.length) {
+    new Chart(document.getElementById('revenueTrendChart'), {
+      type: 'line',
+      data: {
+        labels: trendData.map(d => d.label),
+        datasets: [{
+          label: 'Revenue',
+          data: trendData.map(d => d.revenue),
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79,70,229,.08)',
+          fill: true,
+          tension: .4,
+          yAxisID: 'y'
+        },{
+          label: 'Orders',
+          data: trendData.map(d => d.count),
+          borderColor: '#16a34a',
+          backgroundColor: 'transparent',
+          borderDash: [5,5],
+          tension: .4,
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: function(v){ return '\u09F3' + v.toLocaleString(); } } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  }
+
+  // --- Customer Type (Pie) ---
+  if(custData.length) {
+    var cColors = ['#2563eb','#16a34a','#9333ea'];
+    new Chart(document.getElementById('customerChart'), {
+      type: 'doughnut',
+      data: {
+        labels: custData.map(c => c.type),
+        datasets: [{ data: custData.map(c => c.count), backgroundColor: cColors }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // --- Orders by Region (Bar) ---
+  if(regionData.length) {
+    new Chart(document.getElementById('regionChart'), {
+      type: 'bar',
+      data: {
+        labels: regionData.map(r => r.region),
+        datasets: [{
+          label: 'Orders',
+          data: regionData.map(r => r.count),
+          backgroundColor: ['#4f46e5','#7c3aed','#2563eb','#16a34a','#ea580c','#0891b2','#db2777','#65a30d'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+  }
+
+  // --- Sales by City (Bar) ---
+  if(heatData.length) {
+    var topCities = heatData.slice(0, 10);
+    new Chart(document.getElementById('cityChart'), {
+      type: 'bar',
+      data: {
+        labels: topCities.map(h => h.city),
+        datasets: [{
+          label: 'Revenue',
+          data: topCities.map(h => h.revenue),
+          backgroundColor: topCities.map(function(_, i) {
+            var colors = ['#4f46e5','#7c3aed','#2563eb','#16a34a','#ea580c','#0891b2','#db2777','#65a30d','#d97706','#6366f1'];
+            return colors[i % colors.length];
+          }),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return '\u09F3' + ctx.raw.toLocaleString(); } } } },
+        scales: { x: { beginAtZero: true, ticks: { callback: function(v){ return '\u09F3' + v.toLocaleString(); } } } }
+      }
+    });
+  }
+})();
+
+// --- Leaflet GIS Map: Sales Heatmap ---
+(function(){
+  var heatData = {{ heatmap_data|safe }};
+  var mapEl = document.getElementById('salesMap');
+  if(!mapEl || !heatData.length) return;
+
+  var map = L.map('salesMap').setView([23.8103, 90.4125], 7);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  var maxRev = Math.max.apply(null, heatData.map(function(d){ return d.revenue; })) || 1;
+
+  // --- Heat layer (intensity based on revenue) ---
+  var heatPoints = heatData.map(function(d){
+    return [d.lat, d.lng, d.revenue / maxRev];
+  });
+  L.heatLayer(heatPoints, {
+    radius: 35,
+    blur: 25,
+    maxZoom: 10,
+    max: 1.0,
+    gradient: {
+      0.2: '#4f46e5',
+      0.4: '#2563eb',
+      0.6: '#ea580c',
+      0.8: '#dc2626',
+      1.0: '#7f1d1d'
+    }
+  }).addTo(map);
+
+  // --- Circle markers with popups ---
+  heatData.forEach(function(d){
+    var radius = Math.max(6, Math.min(30, (d.revenue / maxRev) * 30));
+    var hue = d.revenue / maxRev;
+    var color = hue < 0.33 ? '#4f46e5' : hue < 0.66 ? '#ea580c' : '#dc2626';
+
+    L.circleMarker([d.lat, d.lng], {
+      radius: radius,
+      fillColor: color,
+      color: '#fff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.7
+    }).addTo(map).bindPopup(
+      '<div style="font-family:ui-sans-serif,sans-serif;min-width:160px">' +
+      '<div style="font-weight:700;font-size:.95rem;margin-bottom:4px">' + d.city + '</div>' +
+      '<div style="font-size:.82rem;color:#6b7280">Orders: <b>' + d.count + '</b></div>' +
+      '<div style="font-size:.82rem;color:#6b7280">Revenue: <b>\u09F3' + d.revenue.toLocaleString() + '</b></div>' +
+      '</div>'
+    );
+  });
+})();
+
+function exportAllCSV() {
+  var table = document.getElementById('ordersTable');
+  if (!table) return;
+  var rows = [];
+  for (var i = 0; i < table.rows.length; i++) {
+    var row = [], cols = table.rows[i].cells;
+    for (var j = 0; j < cols.length; j++) {
+      var text = cols[j].innerText.replace(/"/g, '""').replace(/\n/g, ' ');
+      row.push('"' + text + '"');
+    }
+    rows.push(row.join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'bi_dashboard_export.csv';
+  link.click();
+}
+</script>
+{% endblock %}

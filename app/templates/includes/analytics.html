@@ -1,0 +1,82 @@
+{% load static %}
+
+{# ─── Google Analytics (GA4) ─── #}
+{% if google_analytics_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ google_analytics_id }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  {% if gdpr_anonymize_ip %}
+  gtag('config', '{{ google_analytics_id }}', { 'anonymize_ip': true });
+  {% else %}
+  gtag('config', '{{ google_analytics_id }}');
+  {% endif %}
+</script>
+{% endif %}
+
+{# ─── Matomo / Piwik ─── #}
+{% if matomo_url and matomo_site_id %}
+<script>
+  var _paq = window._paq = window._paq || [];
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  {% if gdpr_anonymize_ip %}
+  _paq.push(['anonymizeIp']);
+  {% endif %}
+  (function() {
+    var u="{{ matomo_url }}";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '{{ matomo_site_id }}']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+{% endif %}
+
+{# ─── Smartlook ─── #}
+{% if smartlook_key %}
+<script type="text/javascript">
+  window.smartlook=function(t){var n,a=document;function s(){var e=a.getElementsByTagName("script")[0],o=a.createElement("script");o.type="text/javascript",o.async=!0,o.src="https://sdk.smartlook.com/assets/recorder.js",e.parentNode.insertBefore(o,e)}if(window.Smartlook)return console.log("Smartlook SDK already loaded"),!1;t=function(t,n){Smartlook("init",t,n)},a.addEventListener?a.addEventListener("DOMContentLoaded",s,!1):a.attachEvent&&a.attachEvent("onreadystatechange",s);var e=new Date;return t("{{ smartlook_key }}",{recordingMaskText:"***"})};
+</script>
+{% endif %}
+
+{# ─── Engagement tracking (sends events to backend) ─── #}
+<script>
+(function(){
+  window.trackEvent = function(event, productId, meta) {
+    try {
+      var consent = {};
+      document.cookie.split(';').forEach(function(c) {
+        var parts = c.trim().split('=');
+        if (parts[0] === 'gdpr_consent') {
+          try { consent = JSON.parse(decodeURIComponent(parts[1])); } catch(e){}
+        }
+      });
+      if (consent.analytics === false) return;
+
+      fetch('/api/track/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify({ event: event, product_id: productId, url: window.location.href, meta: meta || {} })
+      });
+    } catch(e) {}
+  };
+
+  function getCookie(name) {
+    var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+  }
+
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-track]');
+    if (btn) {
+      trackEvent(btn.getAttribute('data-track'), btn.getAttribute('data-product-id'));
+    }
+  });
+
+  document.querySelectorAll('.btn-block[type="submit"]').forEach(function(btn) {
+    btn.setAttribute('data-track', 'cart_add');
+  });
+})();
+</script>

@@ -1,0 +1,54 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}{{ action }} API Key{% endblock %}
+{% block dash_heading %}{{ action }} API Key{% endblock %}
+
+{% block dash_content %}
+<div class="card" style="max-width:700px">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" name="name" class="form-input" value="{{ key.name|default:'' }}" required placeholder="e.g. Stripe Test Mode" />
+      </div>
+      <div class="form-group">
+        <label>Category *</label>
+        <select name="category" class="form-input">
+          <option value="payment" {% if key.category == 'payment' %}selected{% endif %}>Payment Gateway</option>
+          <option value="bi" {% if key.category == 'bi' %}selected{% endif %}>Business Intelligence</option>
+          <option value="seo" {% if key.category == 'seo' %}selected{% endif %}>SEO Tools</option>
+          <option value="chatbot" {% if key.category == 'chatbot' %}selected{% endif %}>Chatbot / AI</option>
+          <option value="tracking" {% if key.category == 'tracking' %}selected{% endif %}>User Tracking / Analytics</option>
+          <option value="email" {% if key.category == 'email' %}selected{% endif %}>Email Service</option>
+          <option value="sms" {% if key.category == 'sms' %}selected{% endif %}>SMS Service</option>
+          <option value="cdn" {% if key.category == 'cdn' %}selected{% endif %}>CDN / Media</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="text" name="api_key" class="form-input" value="{{ key.api_key|default:'' }}" placeholder="pk_test_xxx or sk_live_xxx" style="font-family:monospace" />
+      </div>
+      <div class="form-group">
+        <label>API Secret (optional)</label>
+        <input type="password" name="api_secret" class="form-input" value="{{ key.api_secret|default:'' }}" placeholder="Optional secondary key" style="font-family:monospace" />
+      </div>
+      <div class="form-group">
+        <label>Endpoint URL (optional)</label>
+        <input type="url" name="endpoint" class="form-input" value="{{ key.endpoint|default:'' }}" placeholder="https://api.example.com/v1" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="What this API key is used for">{{ key.description|default:'' }}</textarea>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:.5rem">
+        <input type="checkbox" name="is_active" id="id_active" class="form-check" {% if key.is_active or not key %}checked{% endif %} />
+        <label for="id_active" style="margin:0;font-weight:600">Active</label>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary">{{ action }} API Key</button>
+        <a href="{% url 'dashboard:admin_api_keys' %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

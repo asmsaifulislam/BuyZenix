@@ -1,0 +1,39 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Audit Logs{% endblock %}
+{% block dash_heading %}Audit Logs{% endblock %}
+
+{% block dash_content %}
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table>
+      <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Model</th><th>Object</th><th>IP</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="white-space:nowrap;font-size:.8rem">{{ log.timestamp|date:"M d, H:i" }}</td>
+          <td>{{ log.user.username|default:"—" }}</td>
+          <td>
+            {% if log.action == 'create' %}
+              <span class="badge badge-green">Create</span>
+            {% elif log.action == 'delete' %}
+              <span class="badge badge-red">Delete</span>
+            {% elif log.action == 'login' %}
+              <span class="badge badge-blue">Login</span>
+            {% elif log.action == 'order' %}
+              <span class="badge badge-purple">Order</span>
+            {% else %}
+              <span class="badge badge-yellow">{{ log.get_action_display }}</span>
+            {% endif %}
+          </td>
+          <td>{{ log.model_name|default:"—" }}</td>
+          <td style="font-size:.85rem">{{ log.object_repr|truncatechars:40|default:"—" }}</td>
+          <td style="font-size:.8rem;color:var(--muted)">{{ log.ip_address|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No audit logs yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

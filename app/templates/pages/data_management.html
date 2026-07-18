@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}My Data | BuyZenix{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:700px">
+    <h1 style="margin-bottom:.5rem">My Data & Privacy</h1>
+    <p style="color:var(--text-muted);margin-bottom:2rem">Manage your personal data in compliance with GDPR/CCPA.</p>
+
+    <div style="display:grid;gap:1rem">
+      <div style="padding:1.5rem;background:#fff;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+        <h3 style="margin:0 0 .5rem;font-size:1.1rem">📊 Export My Data</h3>
+        <p style="margin:0 0 1rem;color:#64748b;font-size:.9rem">Download all your data including orders, activity, and loyalty points in JSON format.</p>
+        <div style="display:flex;gap:.5rem">
+          <a href="{% url 'dashboard:gdpr_data_export' %}" class="btn btn-primary">Download JSON</a>
+          <a href="{% url 'dashboard:gdpr_data_export_csv' %}" class="btn btn-outline">Download CSV</a>
+        </div>
+      </div>
+
+      <div style="padding:1.5rem;background:#fff;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+        <h3 style="margin:0 0 .5rem;font-size:1.1rem">🍪 Cookie Preferences</h3>
+        <p style="margin:0 0 1rem;color:#64748b;font-size:.9rem">Control which cookies we use for tracking and analytics.</p>
+        <button onclick="document.getElementById('cookieConsent').style.display='block'" class="btn btn-outline">Manage Cookies</button>
+      </div>
+
+      <div style="padding:1.5rem;background:#fef2f2;border-radius:12px;border:1px solid #fecaca">
+        <h3 style="margin:0 0 .5rem;font-size:1.1rem;color:#dc2626">🗑️ Delete My Account</h3>
+        <p style="margin:0 0 1rem;color:#991b1b;font-size:.9rem">Permanently delete your account and all associated data. This action cannot be undone.</p>
+        <form method="post" action="{% url 'dashboard:gdpr_delete_account' %}" onsubmit="return confirm('Are you absolutely sure? This will permanently delete your account and ALL data.')">
+          {% csrf_token %}
+          <button type="submit" class="btn" style="background:#dc2626;color:#fff">Delete Account & All Data</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

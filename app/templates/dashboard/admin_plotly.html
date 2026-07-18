@@ -1,0 +1,20 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Interactive Charts{% endblock %}
+{% block dash_content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+  <h2 style="margin:0">Interactive BI Charts</h2>
+  <div style="display:flex;gap:.5rem">
+    <a href="?days=7" class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline{% endif %}">7D</a>
+    <a href="?days=30" class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline{% endif %}">30D</a>
+    <a href="?days=90" class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline{% endif %}">90D</a>
+  </div>
+</div>
+<div style="background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+  {{ chart_html|safe }}
+</div>
+<div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
+  <a href="{% url 'dashboard:report_revenue' %}?days={{ days }}" class="btn btn-outline btn-block">📊 Export Revenue CSV</a>
+  <a href="{% url 'dashboard:report_products' %}" class="btn btn-outline btn-block">📦 Export Products CSV</a>
+  <a href="{% url 'dashboard:report_users' %}" class="btn btn-outline btn-block">👥 Export Users CSV</a>
+</div>
+{% endblock %}

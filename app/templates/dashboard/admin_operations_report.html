@@ -1,0 +1,441 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+
+{% block dash_title %}Operations Report{% endblock %}
+{% block dash_heading %}Operations Report{% endblock %}
+
+{% block dash_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block dash_content %}
+
+<style>
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    #delayMap { display:none !important; }
+    body { background:#fff; }
+  }
+  .gauge-ring { width:160px; height:160px; max-width:160px; width:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; }
+  .gauge-inner { width:110px; height:110px; max-width:110px; width:100%; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  .gauge-value { font-size:1.6rem; font-weight:800; }
+  .gauge-label { font-size:.7rem; color:var(--muted); }
+</style>
+
+<!-- ═══ FILTER BAR ═══ -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">City</label>
+        <select name="city" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Cities</option>
+          {% for c in all_cities %}
+          <option value="{{ c }}" {% if f_city == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Status</label>
+        <select name="status" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Statuses</option>
+          {% for s in all_statuses %}
+          <option value="{{ s }}" {% if f_status == s %}selected{% endif %}>{{ s|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date From</label>
+        <input type="date" name="date_from" value="{{ f_date_from }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date To</label>
+        <input type="date" name="date_to" value="{{ f_date_to }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Granularity</label>
+        <select name="granularity" class="form-input" style="padding:.5rem .75rem">
+          <option value="daily" {% if f_granularity == "daily" %}selected{% endif %}>Daily</option>
+          <option value="monthly" {% if f_granularity == "monthly" %}selected{% endif %}>Monthly</option>
+          <option value="yearly" {% if f_granularity == "yearly" %}selected{% endif %}>Yearly</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+        <a href="{% url 'dashboard:admin_operations_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXECUTIVE SUMMARY ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text)">Executive Summary</h2>
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Avg Fulfillment Time</div>
+    <div class="value" style="color:{% if avg_fulfillment_hours <= 24 %}var(--green){% elif avg_fulfillment_hours <= 48 %}var(--orange){% else %}var(--red){% endif %}">{{ avg_fulfillment_hours }}h</div>
+    <div class="sub">Order to ship</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">SLA (48h)</div>
+    <div class="value" style="color:{% if sla_48h_pct >= 90 %}var(--green){% elif sla_48h_pct >= 70 %}var(--orange){% else %}var(--red){% endif %}">{{ sla_48h_pct }}%</div>
+    <div class="sub">Orders shipped within 48h</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Avg Shipping Cost</div>
+    <div class="value">৳{{ avg_shipping_cost|floatformat:0 }}</div>
+    <div class="sub">Per order</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Delay Rate</div>
+    <div class="value" style="color:{% if overall_delay_rate <= 5 %}var(--green){% elif overall_delay_rate <= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ overall_delay_rate }}%</div>
+    <div class="sub">{{ avg_delay_duration }} days avg delay</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Picking Accuracy</div>
+    <div class="value" style="color:{% if picking_accuracy >= 98 %}var(--green){% elif picking_accuracy >= 95 %}var(--orange){% else %}var(--red){% endif %}">{{ picking_accuracy }}%</div>
+    <div class="sub">{{ picking_errors }} errors / {{ total_items_picked }} items</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Pick-Pack Time</div>
+    <div class="value">{{ avg_pick_pack_minutes }}min</div>
+    <div class="sub">Per order average</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Inventory Turnover</div>
+    <div class="value" style="color:var(--blue)">{{ inventory_turnover }}x</div>
+    <div class="sub">COGS / Avg Inventory</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Warehouse Score</div>
+    <div class="value" style="color:{% if warehouse_score >= 80 %}var(--green){% elif warehouse_score >= 60 %}var(--orange){% else %}var(--red){% endif %}">{{ warehouse_score }}</div>
+    <div class="sub">Overall efficiency</div>
+  </div>
+</div>
+
+<!-- ═══ 1. FULFILLMENT TIMES ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">1. Fulfillment Times</h2>
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Fulfillment Time Trend</div>
+    <div class="card-body"><canvas id="fulfillmentTrend" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">SLA Compliance</div>
+    <div class="card-body" style="text-align:center;padding:1.5rem">
+      <div class="gauge-ring" style="background:conic-gradient(#10b981 0% {{ sla_48h_pct }}%, #e2e8f0 {{ sla_48h_pct }}% 100%)">
+        <div class="gauge-inner">
+          <div class="gauge-value" style="color:var(--green)">{{ sla_48h_pct }}%</div>
+          <div class="gauge-label">Within 48h</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;justify-content:center;gap:24px;font-size:.85rem">
+        <div><div style="font-weight:700;color:var(--green)">{{ sla_24h_pct }}%</div><div style="color:var(--muted)">Within 24h</div></div>
+        <div><div style="font-weight:700;color:var(--orange)">{{ sla_48h_pct }}%</div><div style="color:var(--muted)">Within 48h</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Peak vs Off-Peak Orders</div>
+  <div class="card-body"><canvas id="peakHoursChart" height="220"></canvas></div>
+</div>
+
+<!-- ═══ 2. SHIPPING COSTS & DELAYS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">2. Shipping Costs & Delays</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Cost by Carrier</div>
+    <div class="card-body"><canvas id="carrierCostBar" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">On-Time vs Delayed</div>
+    <div class="card-body"><canvas id="delayPie" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Delay Rate by Carrier</div>
+    <div class="card-body"><canvas id="delayBar" height="280"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Shipping Delays by Region</div>
+  <div class="card-body" style="padding:0">
+    <div id="delayMap" class="map-container" style="height:400px;width:100%;position:relative;z-index:0"></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Carrier Performance</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table id="carrierTable" style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Carrier</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Orders</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Total Cost</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Cost/Order</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">On-Time</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Delayed</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Delay Rate</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Avg Delay</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in carrier_list %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;font-weight:600">{{ c.name }}</td>
+          <td style="text-align:right;padding:10px 12px">{{ c.orders }}</td>
+          <td style="text-align:right;padding:10px 12px">৳{{ c.total_cost|floatformat:0 }}</td>
+          <td style="text-align:right;padding:10px 12px">৳{{ c.cost_per_order }}</td>
+          <td style="text-align:right;padding:10px 12px;color:var(--green)">{{ c.on_time }}</td>
+          <td style="text-align:right;padding:10px 12px;color:var(--red)">{{ c.delayed }}</td>
+          <td style="text-align:right;padding:10px 12px;color:{% if c.delay_rate <= 5 %}var(--green){% elif c.delay_rate <= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ c.delay_rate }}%</td>
+          <td style="text-align:right;padding:10px 12px">{{ c.avg_delay_days }} days</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ 3. WAREHOUSE EFFICIENCY ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">3. Warehouse Efficiency</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="card" style="text-align:center;padding:1.5rem">
+      <div class="gauge-ring" style="background:conic-gradient(#10b981 0% {{ warehouse_score }}%, #e2e8f0 {{ warehouse_score }}% 100%)">
+      <div class="gauge-inner">
+        <div class="gauge-value" style="color:{% if warehouse_score >= 80 %}var(--green){% elif warehouse_score >= 60 %}var(--orange){% else %}var(--red){% endif %}">{{ warehouse_score }}</div>
+        <div class="gauge-label">Score</div>
+      </div>
+    </div>
+    <div style="font-weight:700;font-size:.9rem;margin-top:8px">Warehouse Score</div>
+    <div style="font-size:.8rem;color:var(--muted)">Overall efficiency rating</div>
+  </div>
+  <div class="card">
+    <div class="card-header">Picking Accuracy by Shift</div>
+    <div class="card-body"><canvas id="shiftChart" height="200"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Inventory Turnover Trend</div>
+    <div class="card-body"><canvas id="turnoverTrend" height="200"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ ACTIONABLE INSIGHTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Most Cost-Effective Carrier</div>
+      {% with best=carrier_list.0 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">{{ best.name }}</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">৳{{ best.cost_per_order }}/order, {{ best.delay_rate }}% delay</div>
+      {% endwith %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Warehouse Process to Improve</div>
+      {% if picking_accuracy < 97 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">Picking Accuracy ({{ picking_accuracy }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Improve staff training to reduce {{ picking_errors }} errors</div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Picking Accuracy Excellent</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Focus on reducing pick-pack time ({{ avg_pick_pack_minutes }}min)</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Fulfillment Delay Strategy</div>
+      {% if overall_delay_rate > 10 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">High Delay Rate ({{ overall_delay_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Negotiate better SLAs or switch to faster carriers</div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Delays Under Control</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Focus on reducing avg delay ({{ avg_delay_duration }} days)</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var ftTrend = {{ fulfillment_trend|safe }};
+  var peakHours = {{ peak_hours|safe }};
+  var carrierData = {{ carrier_list|safe }};
+  var delayPie = {{ delay_pie_data|safe }};
+  var cityShipping = {{ city_shipping_data|safe }};
+  var mapData = {{ map_data|safe }};
+  var shiftData = {{ shift_accuracy|safe }};
+  var turnoverTrend = {{ inv_turnover_trend|safe }};
+
+  // 1. Fulfillment Trend
+  if(ftTrend.length) {
+    new Chart(document.getElementById('fulfillmentTrend'), {
+      type: 'line',
+      data: {
+        labels: ftTrend.map(f => f.month),
+        datasets: [
+          { label: 'Avg Hours', data: ftTrend.map(f => f.avg_hours), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.08)', fill: true, tension: .4, yAxisID: 'y' },
+          { label: 'Orders', data: ftTrend.map(f => f.count), borderColor: '#10b981', borderDash: [5,5], tension: .4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Hours' } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  }
+
+  // 2. Peak Hours
+  if(peakHours.length) {
+    new Chart(document.getElementById('peakHoursChart'), {
+      type: 'bar',
+      data: {
+        labels: peakHours.map(p => p.hour + ':00'),
+        datasets: [{
+          label: 'Orders',
+          data: peakHours.map(p => p.count),
+          backgroundColor: peakHours.map(p => (p.hour >= 9 && p.hour <= 17) ? '#f59e0b' : '#6366f1'),
+          borderRadius: 4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+
+  // 3. Carrier Cost Bar
+  if(carrierData.length) {
+    new Chart(document.getElementById('carrierCostBar'), {
+      type: 'bar',
+      data: {
+        labels: carrierData.map(c => c.name),
+        datasets: [
+          { label: 'Total Cost', data: carrierData.map(c => c.total_cost), backgroundColor: '#4f46e5', borderRadius: 6, yAxisID: 'y' },
+          { label: 'Cost/Order', data: carrierData.map(c => c.cost_per_order), backgroundColor: '#f59e0b', borderRadius: 6, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '\u09F3' + v.toLocaleString() } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
+        }
+      }
+    });
+  }
+
+  // 4. Delay Pie
+  if(delayPie.length) {
+    new Chart(document.getElementById('delayPie'), {
+      type: 'doughnut',
+      data: {
+        labels: delayPie.map(d => d.label),
+        datasets: [{ data: delayPie.map(d => d.count), backgroundColor: ['#10b981','#ef4444'], borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // 5. Delay Rate by Carrier
+  if(carrierData.length) {
+    new Chart(document.getElementById('delayBar'), {
+      type: 'bar',
+      data: {
+        labels: carrierData.map(c => c.name),
+        datasets: [{
+          label: 'Delay Rate %',
+          data: carrierData.map(c => c.delay_rate),
+          backgroundColor: carrierData.map(c => c.delay_rate <= 5 ? '#10b981' : c.delay_rate <= 12 ? '#f59e0b' : '#ef4444'),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 25, ticks: { callback: v => v + '%' } } } }
+    });
+  }
+
+  // 6. Shift Accuracy
+  if(shiftData.length) {
+    new Chart(document.getElementById('shiftChart'), {
+      type: 'bar',
+      data: {
+        labels: shiftData.map(s => s.shift.split(' ')[0]),
+        datasets: [{
+          label: 'Accuracy %',
+          data: shiftData.map(s => s.accuracy),
+          backgroundColor: shiftData.map(s => s.accuracy >= 98 ? '#10b981' : s.accuracy >= 96 ? '#f59e0b' : '#ef4444'),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 90, max: 100, ticks: { callback: v => v + '%' } } } }
+    });
+  }
+
+  // 7. Inventory Turnover Trend
+  if(turnoverTrend.length) {
+    new Chart(document.getElementById('turnoverTrend'), {
+      type: 'line',
+      data: {
+        labels: turnoverTrend.map(t => t.month),
+        datasets: [{
+          label: 'Turnover Ratio',
+          data: turnoverTrend.map(t => t.turnover),
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139,92,246,.08)',
+          fill: true, tension: .4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
+
+  // 8. Map
+  if(document.getElementById('delayMap') && mapData.length) {
+    var map = L.map('delayMap').setView([23.6850, 90.3563], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+    var maxOrders = Math.max(...mapData.map(m => m.orders), 1);
+    mapData.forEach(function(m) {
+      var r = Math.max(8, Math.min(25, (m.orders / maxOrders) * 25));
+      var color = m.delay_rate > 12 ? '#ef4444' : m.delay_rate > 6 ? '#f59e0b' : '#10b981';
+      L.circleMarker([m.lat, m.lng], { radius: r, fillColor: color, fillOpacity: 0.7, color: '#fff', weight: 2 })
+        .addTo(map)
+        .bindPopup('<b>' + m.city + '</b><br>Orders: ' + m.orders + '<br>Avg Cost: \u09F3' + m.cost + '<br>Delay: ' + m.delay_rate + '%');
+    });
+  }
+});
+
+function exportCSV() {
+  var table = document.getElementById('carrierTable');
+  if (!table) return;
+  var rows = [];
+  for (var i = 0; i < table.rows.length; i++) {
+    var row = [], cols = table.rows[i].cells;
+    for (var j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+    rows.push(row.join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'operations_report.csv';
+  a.click();
+}
+</script>
+
+{% endblock %}

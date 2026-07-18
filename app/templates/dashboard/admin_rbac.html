@@ -1,0 +1,50 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Role-Based Access Control{% endblock %}
+{% block dash_content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+  <h2 style="margin:0">Role-Based Access Control</h2>
+  <a href="{% url 'dashboard:rbac_group_create' %}" class="btn btn-primary">+ Create Group</a>
+</div>
+<div class="admin-table-wrap">
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>Group Name</th>
+      <th>Permissions</th>
+      <th>Users</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for group in groups %}
+    <tr>
+      <td><strong>{{ group.name }}</strong></td>
+      <td>
+        {% for perm in group.permissions.all %}
+          <span style="display:inline-block;padding:2px 8px;background:#e0e7ff;color:#3730a3;border-radius:4px;font-size:.72rem;margin:2px">{{ perm.codename }}</span>
+        {% empty %}
+          <span style="color:#94a3b8;font-size:.82rem">No permissions</span>
+        {% endfor %}
+      </td>
+      <td>{{ group.user_set.count }}</td>
+      <td>
+        <a href="{% url 'dashboard:rbac_group_edit' group.pk %}" class="btn btn-sm btn-outline">Edit</a>
+        <a href="{% url 'dashboard:rbac_group_delete' group.pk %}" class="btn btn-sm" style="background:#dc2626;color:#fff">Delete</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:2rem">No groups created yet. Create one to assign permissions.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<div style="margin-top:2rem;padding:1.25rem;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+  <h3 style="margin:0 0 .75rem;font-size:1rem">Quick Setup Guide</h3>
+  <ul style="margin:0;padding-left:1.25rem;color:#475569;font-size:.88rem;line-height:1.8">
+    <li><strong>Customer:</strong> Can browse products, add to cart, place orders</li>
+    <li><strong>Supplier:</strong> Can manage own products, view own orders, manage gallery</li>
+    <li><strong>Admin:</strong> Full access to all features, users, settings</li>
+    <li>Assign groups to users from <a href="{% url 'dashboard:admin_users' %}" style="color:#6366f1;font-weight:600">User Management</a></li>
+  </ul>
+</div>
+{% endblock %}

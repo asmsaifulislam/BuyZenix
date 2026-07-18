@@ -1,0 +1,414 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+
+{% block dash_title %}Product Report{% endblock %}
+{% block dash_heading %}Product Report{% endblock %}
+
+{% block dash_content %}
+
+<style>
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    body { background:#fff; }
+  }
+  .gauge-ring { max-width:140px; width:100%; height:140px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; }
+  .gauge-inner { max-width:100px; width:100%; height:100px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  .gauge-value { font-size:1.5rem; font-weight:800; }
+  .gauge-label { font-size:.7rem; color:var(--muted); }
+  .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .status-healthy { background:#10b981; }
+  .status-low { background:#f59e0b; }
+  .status-reorder { background:#f97316; }
+  .status-out { background:#ef4444; }
+</style>
+
+<!-- ═══ FILTER BAR ═══ -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Category</label>
+        <select name="category" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Categories</option>
+          {% for c in all_categories %}
+          <option value="{{ c }}" {% if f_category == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Stock Status</label>
+        <select name="stock" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All</option>
+          <option value="low" {% if f_stock == "low" %}selected{% endif %}>Low Stock</option>
+          <option value="out" {% if f_stock == "out" %}selected{% endif %}>Out of Stock</option>
+          <option value="reorder" {% if f_stock == "reorder" %}selected{% endif %}>Reorder Soon</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Sort By</label>
+        <select name="sort" class="form-input" style="padding:.5rem .75rem">
+          <option value="revenue" {% if f_sort == "revenue" %}selected{% endif %}>Revenue</option>
+          <option value="qty" {% if f_sort == "qty" %}selected{% endif %}>Quantity Sold</option>
+          <option value="orders" {% if f_sort == "orders" %}selected{% endif %}>Order Count</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date From</label>
+        <input type="date" name="date_from" value="{{ f_date_from }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date To</label>
+        <input type="date" name="date_to" value="{{ f_date_to }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+        <a href="{% url 'dashboard:admin_product_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXECUTIVE SUMMARY ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text)">Executive Summary</h2>
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Total Products Sold</div>
+    <div class="value">{{ total_products_sold }}</div>
+    <div class="sub">Unique product lines</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Total Revenue</div>
+    <div class="value" style="color:var(--green)">৳{{ total_revenue_all|floatformat:0 }}</div>
+    <div class="sub">From all products</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Inventory Health</div>
+    <div class="value" style="color:{% if stock_health_pct >= 70 %}var(--green){% elif stock_health_pct >= 40 %}var(--orange){% else %}var(--red){% endif %}">{{ stock_health_pct }}%</div>
+    <div class="sub">{{ in_stock }}/{{ total_products_count }} well stocked</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Avg Return Rate</div>
+    <div class="value" style="color:{% if overall_return_rate <= 5 %}var(--green){% elif overall_return_rate <= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ overall_return_rate }}%</div>
+    <div class="sub">{{ total_returned_all }} units returned</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Out of Stock</div>
+    <div class="value" style="color:{% if out_of_stock == 0 %}var(--green){% else %}var(--red){% endif %}">{{ out_of_stock }}</div>
+    <div class="sub">Products unavailable</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Low Stock</div>
+    <div class="value" style="color:{% if low_stock == 0 %}var(--green){% else %}var(--orange){% endif %}">{{ low_stock }}</div>
+    <div class="sub">Need attention</div>
+  </div>
+</div>
+
+<!-- ═══ 1. BEST-SELLING PRODUCTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">1. Best-Selling Products</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Top Products by Revenue</div>
+    <div class="card-body"><canvas id="topProductsBar" height="320"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Revenue Share by Category</div>
+    <div class="card-body"><canvas id="categoryPie" height="320"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Detailed Product Breakdown</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table id="productsTable" style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">#</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Product</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Category</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Qty Sold</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Orders</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Revenue</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Share</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in top10_products %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;color:var(--muted)">{{ forloop.counter }}</td>
+          <td style="padding:10px 12px;font-weight:600">{{ p.name }}</td>
+          <td style="padding:10px 12px"><span class="badge badge-blue">{{ p.category }}</span></td>
+          <td style="padding:10px 12px;text-align:right">{{ p.total_qty }}</td>
+          <td style="padding:10px 12px;text-align:right">{{ p.order_count }}</td>
+          <td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--green)">৳{{ p.total_revenue|floatformat:0 }}</td>
+          <td style="padding:10px 12px;text-align:right">{{ p.share_pct }}%</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted)">No product data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ 2. INVENTORY LEVELS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">2. Inventory Levels</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="card" style="text-align:center;padding:1.5rem">
+    <div class="gauge-ring" style="background:conic-gradient(#10b981 0% {{ stock_health_pct }}%, #e2e8f0 {{ stock_health_pct }}% 100%)">
+      <div class="gauge-inner">
+        <div class="gauge-value" style="color:var(--green)">{{ stock_health_pct }}%</div>
+        <div class="gauge-label">Healthy</div>
+      </div>
+    </div>
+    <div style="font-weight:700;font-size:.9rem;margin-top:8px">Inventory Health</div>
+    <div style="font-size:.8rem;color:var(--muted)">{{ in_stock }}/{{ total_products_count }} products</div>
+  </div>
+  <div class="card">
+    <div class="card-header">Stock Distribution</div>
+    <div class="card-body"><canvas id="stockDistChart" height="200"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Inventory by Category</div>
+    <div class="card-body"><canvas id="catStockChart" height="200"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Low Stock Alerts</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Product</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Category</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Stock</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in inventory_detail %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;font-weight:600">{{ i.product.name }}</td>
+          <td style="padding:10px 12px"><span class="badge badge-blue">{{ i.product.category }}</span></td>
+          <td style="padding:10px 12px;text-align:right;font-weight:700;color:{% if i.stock == 0 %}var(--red){% elif i.stock <= 5 %}var(--orange){% else %}var(--green){% endif %}">{{ i.stock }}</td>
+          <td style="padding:10px 12px">
+            {% if i.status == "out_of_stock" %}<span class="status-dot status-out"></span>Out of Stock
+            {% elif i.status == "low" %}<span class="status-dot status-low"></span>Low Stock
+            {% elif i.status == "reorder_soon" %}<span class="status-dot status-reorder"></span>Reorder Soon
+            {% else %}<span class="status-dot status-healthy"></span>Healthy{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted)">All products well stocked</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ 3. RETURN RATES ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">3. Product Return Rates</h2>
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Return Rate by Product</div>
+    <div class="card-body"><canvas id="returnBar" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Return Reasons</div>
+    <div class="card-body"><canvas id="returnReasonsPie" height="280"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Return Rate by Category</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Category</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Units Sold</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Units Returned</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Return Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cat_return_data %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;font-weight:600">{{ c.category }}</td>
+          <td style="padding:10px 12px;text-align:right">{{ c.sold_qty }}</td>
+          <td style="padding:10px 12px;text-align:right;color:var(--red)">{{ c.returned_qty }}</td>
+          <td style="padding:10px 12px;text-align:right;font-weight:700;color:{% if c.return_rate <= 5 %}var(--green){% elif c.return_rate <= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ c.return_rate }}%</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted)">No return data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ ACTIONABLE INSIGHTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Needs Restocking</div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">{{ out_of_stock }} Out of Stock</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">{{ low_stock }} products with low stock need reorder</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Top Revenue Driver</div>
+      {% with best=top10_products.0 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">{{ best.name|truncatewords:4 }}</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">৳{{ best.total_revenue|floatformat:0 }} ({{ best.share_pct }}% of total)</div>
+      {% endwith %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Quality Check Needed</div>
+      {% if overall_return_rate > 10 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">High Return Rate ({{ overall_return_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Review top returned products for quality issues</div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Healthy Returns ({{ overall_return_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Return rates within acceptable range</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var topProd = {{ top10_products|safe }};
+  var catRev = {{ cat_rev_data|safe }};
+  var stockDist = {{ stock_dist|safe }};
+  var returnData = {{ return_data|safe }};
+  var returnReasons = {{ return_reasons|safe }};
+
+  // 1. Top Products Bar
+  if(topProd.length) {
+    new Chart(document.getElementById('topProductsBar'), {
+      type: 'bar',
+      data: {
+        labels: topProd.map(p => p.name),
+        datasets: [
+          { label: 'Revenue', data: topProd.map(p => p.total_revenue), backgroundColor: '#4f46e5', borderRadius: 6, yAxisID: 'y' },
+          { label: 'Units Sold', data: topProd.map(p => p.total_qty), backgroundColor: '#10b981', borderRadius: 6, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '\u09F3' + v.toLocaleString() } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 10 } }
+        }
+      }
+    });
+  }
+
+  // 2. Category Revenue Pie
+  if(catRev.length) {
+    var catColors = ['#4f46e5','#7c3aed','#2563eb','#16a34a','#ea580c','#0891b2','#db2777','#65a30d'];
+    new Chart(document.getElementById('categoryPie'), {
+      type: 'doughnut',
+      data: {
+        labels: catRev.map(c => c.category),
+        datasets: [{ data: catRev.map(c => c.revenue), backgroundColor: catRev.map((_,i) => catColors[i % catColors.length]), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // 3. Stock Distribution Doughnut
+  if(stockDist.length) {
+    new Chart(document.getElementById('stockDistChart'), {
+      type: 'doughnut',
+      data: {
+        labels: stockDist.map(s => s.label),
+        datasets: [{ data: stockDist.map(s => s.count), backgroundColor: ['#10b981','#f59e0b','#ef4444'], borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // 4. Inventory by Category
+  var catStockMap = {};
+  {% for i in inventory_detail %}
+  var cat = '{{ i.product.category }}';
+  catStockMap[cat] = (catStockMap[cat] || 0) + {{ i.stock }};
+  {% endfor %}
+  var catLabels = Object.keys(catStockMap);
+  var catValues = Object.values(catStockMap);
+  if(catLabels.length) {
+    new Chart(document.getElementById('catStockChart'), {
+      type: 'bar',
+      data: {
+        labels: catLabels,
+        datasets: [{ label: 'Stock Units', data: catValues, backgroundColor: ['#4f46e5','#7c3aed','#2563eb','#16a34a'], borderRadius: 6 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 5 } } } }
+    });
+  }
+
+  // 5. Return Rate by Product
+  if(returnData.length) {
+    var rd = returnData.slice(0, 10);
+    new Chart(document.getElementById('returnBar'), {
+      type: 'bar',
+      data: {
+        labels: rd.map(r => r.product__name),
+        datasets: [{
+          label: 'Return Rate %',
+          data: rd.map(r => r.return_rate),
+          backgroundColor: rd.map(r => r.return_rate > 15 ? '#ef4444' : r.return_rate > 8 ? '#f59e0b' : '#10b981'),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } } }
+    });
+  }
+
+  // 6. Return Reasons Pie
+  if(returnReasons.length) {
+    new Chart(document.getElementById('returnReasonsPie'), {
+      type: 'doughnut',
+      data: {
+        labels: returnReasons.map(r => r.reason),
+        datasets: [{ data: returnReasons.map(r => r.count), backgroundColor: ['#ef4444','#f59e0b','#8b5cf6','#06b6d4','#94a3b8'], borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+});
+
+function exportCSV() {
+  var table = document.getElementById('productsTable');
+  if (!table) return;
+  var rows = [];
+  for (var i = 0; i < table.rows.length; i++) {
+    var row = [], cols = table.rows[i].cells;
+    for (var j = 0; j < cols.length; j++) {
+      row.push('"' + cols[j].innerText.replace(/"/g, '""').replace(/\n/g, ' ') + '"');
+    }
+    rows.push(row.join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'product_report.csv';
+  a.click();
+}
+</script>
+
+{% endblock %}

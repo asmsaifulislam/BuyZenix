@@ -1,0 +1,32 @@
+{% load static %}
+{% load currency_tags %}
+<article class="product-card">
+  <a class="product-thumb" href="{{ product.get_absolute_url }}">
+    {% if product.image %}
+      <img src="{{ product.image.url }}" alt="{{ product.name }}" />
+    {% else %}
+      <span class="ph">{{ product.name|first|upper }}</span>
+    {% endif %}
+  </a>
+  <div class="product-body">
+    <span class="cat">{{ product.category.name }}</span>
+    <h3><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
+    <span class="stock">{% if product.stock > 0 %}In stock{% else %}Out of stock{% endif %}</span>
+    <span class="price">
+      {% if product.is_on_sale %}
+        <span style="text-decoration:line-through;color:#9ca3af;font-size:.85em">{% money product.price %}</span>
+        <span style="color:#dc2626;font-weight:700">{% money product.sale_price %}</span>
+      {% else %}
+        {% money product.price %}
+      {% endif %}
+    </span>
+    <form action="{% url 'cart:cart_add' product.id %}" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="quantity" value="1" />
+      <button class="btn btn-primary btn-sm btn-block" type="submit"
+              {% if not product.available %}disabled{% endif %}>
+        {% if product.available %}Add to cart{% else %}Unavailable{% endif %}
+      </button>
+    </form>
+  </div>
+</article>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuyZenix — Premium Promo Banner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 3rem;
+    padding: 2rem;
+  }
+
+  .format-label {
+    color: #64748b;
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: -.5rem;
+  }
+
+  /* ─── Shared Banner Styles ─── */
+  .banner {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 30%, #12082a 60%, #0d0618 100%);
+    color: #fff;
+    border-radius: 24px;
+  }
+
+  .banner::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 26px;
+    background: linear-gradient(135deg, #a855f7, #6366f1, #eab308, #a855f7);
+    z-index: -1;
+    animation: borderGlow 4s ease-in-out infinite;
+  }
+
+  @keyframes borderGlow {
+    0%, 100% { opacity: .7; filter: blur(0px); }
+    50% { opacity: 1; filter: blur(2px); }
+  }
+
+  .banner::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(168,85,247,.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: pulse 6s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: .6; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+
+  .banner-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    padding: 3rem 3.5rem;
+  }
+
+  /* Logo */
+  .logo-wrap {
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .logo-glow {
+    position: absolute;
+    inset: -15px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #a855f7, #6366f1, #eab308, #f97316, #a855f7);
+    filter: blur(20px);
+    opacity: .5;
+    animation: logoSpin 8s linear infinite;
+  }
+
+  @keyframes logoSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .logo-circle {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e1b4b, #0f172a);
+    border: 2px solid rgba(168,85,247,.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .logo-icon {
+    font-size: 3.5rem;
+    filter: drop-shadow(0 0 20px rgba(168,85,247,.5));
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .logo-badge {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .9rem;
+    border: 2px solid #0f0a1a;
+    animation: clickPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes clickPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  .brand-text {
+    text-align: center;
+    margin-top: .75rem;
+  }
+
+  .brand-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #c084fc, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: .04em;
+  }
+
+  .brand-tagline {
+    font-size: .5rem;
+    letter-spacing: .2em;
+    color: #eab308;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Text Content */
+  .text-content {
+    flex: 1;
+    max-width: 520px;
+  }
+
+  .headline {
+    font-size: 2.6rem;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: .75rem;
+    background: linear-gradient(135deg, #fff 0%, #c4b5fd 50%, #eab308 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textReveal 1s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .headline em {
+    font-style: normal;
+    background: linear-gradient(135deg, #eab308, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @keyframes textReveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .subtext {
+    font-size: 1.05rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    animation: textReveal 1s ease-out .2s forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .highlights {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+    animation: textReveal 1s ease-out .4s forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .highlight {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+
+  .highlight .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #a855f7;
+    box-shadow: 0 0 8px rgba(168,85,247,.6);
+  }
+
+  .buttons {
+    display: flex;
+    gap: 1rem;
+    animation: textReveal 1s ease-out .6s forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .85rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: .95rem;
+    text-decoration: none;
+    transition: all .3s;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(99,102,241,.4);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(99,102,241,.5);
+  }
+
+  .btn-outline {
+    border: 2px solid rgba(168,85,247,.4);
+    color: #c4b5fd;
+    background: transparent;
+  }
+
+  .btn-outline:hover {
+    border-color: #a855f7;
+    background: rgba(168,85,247,.1);
+    transform: translateY(-2px);
+  }
+
+  /* Decorative Elements */
+  .deco-grid {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    opacity: .15;
+    z-index: 0;
+  }
+
+  .deco-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #a855f7;
+  }
+
+  .deco-line {
+    position: absolute;
+    bottom: 40px;
+    right: 50px;
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(168,85,247,.3), transparent);
+  }
+
+  .deco-circle {
+    position: absolute;
+    top: 50%;
+    right: 25%;
+    width: 200px;
+    height: 200px;
+    border: 1px solid rgba(168,85,247,.08);
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* ─── Instagram Square ─── */
+  .banner-ig {
+    width: 540px;
+    height: 540px;
+  }
+
+  .banner-ig .banner-content {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    padding: 2.5rem;
+    gap: 1.5rem;
+  }
+
+  .banner-ig .headline { font-size: 2.2rem; }
+  .banner-ig .subtext { font-size: .95rem; }
+  .banner-ig .highlights { justify-content: center; }
+  .banner-ig .buttons { justify-content: center; }
+
+  /* ─── Facebook Banner ─── */
+  .banner-fb {
+    width: 940px;
+    height: 470px;
+  }
+
+  .banner-fb .logo-circle { width: 120px; height: 120px; }
+  .banner-fb .logo-icon { font-size: 3rem; }
+  .banner-fb .headline { font-size: 2.4rem; }
+
+  /* ─── YouTube Thumbnail ─── */
+  .banner-yt {
+    width: 1280px;
+    height: 720px;
+  }
+
+  .banner-yt .banner-content { padding: 4rem; gap: 4rem; }
+  .banner-yt .logo-circle { width: 180px; height: 180px; }
+  .banner-yt .logo-icon { font-size: 4.5rem; }
+  .banner-yt .headline { font-size: 3.2rem; }
+  .banner-yt .subtext { font-size: 1.2rem; }
+  .banner-yt .highlight { font-size: .95rem; }
+  .banner-yt .btn { padding: 1rem 2.5rem; font-size: 1.05rem; }
+
+  /* ─── Watermark ─── */
+  .watermark {
+    position: absolute;
+    bottom: 15px;
+    right: 20px;
+    font-size: .65rem;
+    color: rgba(255,255,255,.15);
+    letter-spacing: .1em;
+    font-weight: 600;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ Instagram Square (540x540) ═══ -->
+<p class="format-label">Instagram Square — 540 × 540</p>
+<div class="banner banner-ig">
+  <div class="deco-grid">
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+  </div>
+  <div class="deco-circle"></div>
+  <div class="banner-content">
+    <div class="logo-wrap">
+      <div class="logo-glow"></div>
+      <div class="logo-circle">
+        <div class="logo-icon">🛍️</div>
+        <div class="logo-badge">👆</div>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">BuyZenix</div>
+        <div class="brand-tagline">BUY BETTER. LIVE BETTER.</div>
+      </div>
+    </div>
+    <div class="text-content">
+      <div class="headline">Buy &amp; Sell<br><em>everything</em>, delivered fast</div>
+      <div class="subtext">Your zen marketplace — shop millions of products or start selling today.</div>
+      <div class="highlights">
+        <span class="highlight"><span class="dot"></span>Buy Anything</span>
+        <span class="highlight"><span class="dot"></span>Sell Anything</span>
+        <span class="highlight"><span class="dot"></span>Fast Delivery</span>
+        <span class="highlight"><span class="dot"></span>Best Prices</span>
+      </div>
+      <div class="buttons">
+        <a class="btn btn-primary">Start shopping →</a>
+        <a class="btn btn-outline">Start selling →</a>
+      </div>
+    </div>
+  </div>
+  <div class="watermark">BUYZENIX.COM</div>
+</div>
+
+<!-- ═══ Facebook Banner (940x470) ═══ -->
+<p class="format-label">Facebook Banner — 940 × 470</p>
+<div class="banner banner-fb">
+  <div class="deco-grid">
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+  </div>
+  <div class="deco-circle"></div>
+  <div class="deco-line"></div>
+  <div class="banner-content">
+    <div class="logo-wrap">
+      <div class="logo-glow"></div>
+      <div class="logo-circle">
+        <div class="logo-icon">🛍️</div>
+        <div class="logo-badge">👆</div>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">BuyZenix</div>
+        <div class="brand-tagline">BUY BETTER. LIVE BETTER.</div>
+      </div>
+    </div>
+    <div class="text-content">
+      <div class="headline">Buy &amp; Sell<br><em>everything</em>, delivered fast</div>
+      <div class="subtext">Your zen marketplace — shop millions of products or start selling today.</div>
+      <div class="highlights">
+        <span class="highlight"><span class="dot"></span>Buy Anything</span>
+        <span class="highlight"><span class="dot"></span>Sell Anything</span>
+        <span class="highlight"><span class="dot"></span>Fast Delivery</span>
+        <span class="highlight"><span class="dot"></span>Best Prices</span>
+      </div>
+      <div class="buttons">
+        <a class="btn btn-primary">Start shopping →</a>
+        <a class="btn btn-outline">Start selling →</a>
+      </div>
+    </div>
+  </div>
+  <div class="watermark">BUYZENIX.COM</div>
+</div>
+
+<!-- ═══ YouTube Thumbnail (1280x720) ═══ -->
+<p class="format-label">YouTube Thumbnail — 1280 × 720</p>
+<div class="banner banner-yt">
+  <div class="deco-grid">
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+    <div class="deco-dot"></div><div class="deco-dot"></div><div class="deco-dot"></div>
+  </div>
+  <div class="deco-circle"></div>
+  <div class="deco-line"></div>
+  <div class="banner-content">
+    <div class="logo-wrap">
+      <div class="logo-glow"></div>
+      <div class="logo-circle">
+        <div class="logo-icon">🛍️</div>
+        <div class="logo-badge">👆</div>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">BuyZenix</div>
+        <div class="brand-tagline">BUY BETTER. LIVE BETTER.</div>
+      </div>
+    </div>
+    <div class="text-content">
+      <div class="headline">Buy &amp; Sell<br><em>everything</em>, delivered fast</div>
+      <div class="subtext">Your zen marketplace — shop millions of products or start selling today.</div>
+      <div class="highlights">
+        <span class="highlight"><span class="dot"></span>Buy Anything</span>
+        <span class="highlight"><span class="dot"></span>Sell Anything</span>
+        <span class="highlight"><span class="dot"></span>Fast Delivery</span>
+        <span class="highlight"><span class="dot"></span>Best Prices</span>
+      </div>
+      <div class="buttons">
+        <a class="btn btn-primary">Start shopping →</a>
+        <a class="btn btn-outline">Start selling →</a>
+      </div>
+    </div>
+  </div>
+  <div class="watermark">BUYZENIX.COM</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}BuyZenix — Premium Online Store{% endblock %}
+
+{% block content %}
+
+{% if banners %}
+<div class="container" style="margin-top:1rem">
+  <div style="position:relative;border-radius:20px;overflow:hidden;max-height:300px">
+    {% for banner in banners %}
+      {% if forloop.first %}
+      <img src="{{ banner.image.url }}" alt="{{ banner.title }}" style="width:100%;height:300px;object-fit:cover" />
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.5),transparent);display:flex;align-items:center;padding:0 3rem">
+        <div>
+          <h2 style="color:#fff;font-size:clamp(1.5rem,3vw,2.5rem);margin:0 0 .5rem">{{ banner.title }}</h2>
+          {% if banner.link_url %}<a href="{{ banner.link_url }}" class="btn btn-primary">Shop Now</a>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<section class="hero-banner-wrap" style="margin-top:1rem">
+  <div class="container">
+    <div class="hero-banner">
+      {% if featured %}
+      <div class="hero-marquee">
+        <div class="hero-marquee-track">
+          {% for p in featured %}
+          <div class="hero-marquee-item">
+            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" />{% else %}<div class="hero-marquee-placeholder">📦</div>{% endif %}
+          </div>
+          {% endfor %}
+          {% for p in featured %}
+          <div class="hero-marquee-item">
+            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" />{% else %}<div class="hero-marquee-placeholder">📦</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <div style="position:relative;z-index:2;display:flex;align-items:stretch;gap:0;width:100%">
+        <div class="hero-side hero-left" style="flex:0 0 30%;max-width:30%">
+          <div class="hero-logo-card">
+            <img src="{% static 'img/logo1.jpeg' %}" alt="BuyZenix" class="hero-logo-img" id="heroLogo" />
+          </div>
+        </div>
+
+        {% if hero_left %}
+        <div style="flex:0 0 30%;max-width:30%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(168,85,247,.15);border-radius:20px;margin:0 6px;padding:28px 24px;min-height:220px;position:relative;overflow:hidden;backdrop-filter:blur(6px)" class="hero-promo-card">
+          <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:linear-gradient(135deg,rgba(168,85,247,.12),rgba(234,179,8,.08));border-radius:50%;filter:blur(30px)"></div>
+          <div style="position:absolute;bottom:-10px;left:-10px;width:80px;height:80px;background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(236,72,153,.06));border-radius:50%;filter:blur(25px)"></div>
+          <div style="text-align:center;z-index:1">
+            {% if hero_left.discount_text %}
+            <div class="promo-discount-text" style="font-size:2rem;font-weight:900;line-height:1.15;background:linear-gradient(135deg,#eab308,#f97316,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:promoFadeBounce 1s ease-out forwards;opacity:0;transform:translateY(20px);letter-spacing:-.02em">{{ hero_left.discount_text }}</div>
+            {% endif %}
+            {% if hero_left.title %}
+            <div style="font-size:.95rem;font-weight:700;margin-top:8px;color:#e2e8f0;animation:promoFadeSlide .8s ease-out .2s forwards;opacity:0;transform:translateY(15px)">{{ hero_left.title }}</div>
+            {% endif %}
+            {% if hero_left.subtitle %}
+            <div style="font-size:.8rem;color:#94a3b8;margin-top:4px;animation:promoFadeSlide .8s ease-out .35s forwards;opacity:0;transform:translateY(15px)">{{ hero_left.subtitle }}</div>
+            {% endif %}
+            {% if hero_left.product %}
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;animation:promoFadeSlide .8s ease-out .5s forwards;opacity:0;transform:translateY(15px)">
+              {% if hero_left.product.image %}
+              <img src="{{ hero_left.product.image.url }}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:2px solid rgba(168,85,247,.3)" />
+              {% endif %}
+              <div style="text-align:left">
+                <div style="font-size:.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;font-weight:600">{{ hero_left.product.category.name }}</div>
+                <div style="font-size:.82rem;font-weight:700;color:#f1f5f9;line-height:1.2">{{ hero_left.product.name }}</div>
+              </div>
+            </div>
+            {% endif %}
+            {% if hero_left.button_text %}
+            <a href="{{ hero_left.button_url|default:'#' }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 22px;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;border-radius:8px;font-weight:700;font-size:.82rem;text-decoration:none;transition:all .2s;box-shadow:0 4px 14px rgba(168,85,247,.3);animation:promoFadeSlide .8s ease-out .65s forwards;opacity:0;transform:translateY(15px)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(168,85,247,.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(168,85,247,.3)'">{{ hero_left.button_text }} →</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="hero-center" style="flex:1.3;padding:0 1.2rem">
+          <h1 style="text-transform:capitalize">Buy &amp; Sell<br><span>everything, delivered fast</span></h1>
+          <p style="color:#6366f1;font-weight:500">Your zen marketplace — shop or start selling today.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="{% url 'core:product_list' %}">Start shopping</a>
+            <a class="btn btn-outline btn-lg" href="{% url 'accounts:register' %}">Start selling</a>
+          </div>
+<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <select onchange="window.location.search = '?sort_price=' + this.value" style="padding: 10px 18px; border-radius: 15px; border: 1px solid rgba(0,0,0,0.2); background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #000; font-size: 0.85rem; font-weight: 500; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-width: 140px; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px;">
+              <option value="">Sort by (Featured)</option>
+              <option value="low_to_high" {% if price_sort == 'low_to_high' %}selected{% endif %}>Lowest Price</option>
+              <option value="high_to_low">Highest Price</option>
+            </select>
+          </div>
+        </div>
+
+        {% if hero_right %}
+        <div style="flex:0 0 30%;max-width:30%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(168,85,247,.15);border-radius:20px;margin:0 6px;padding:28px 24px;min-height:220px;position:relative;overflow:hidden;backdrop-filter:blur(6px)" class="hero-promo-card">
+          <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:linear-gradient(135deg,rgba(168,85,247,.12),rgba(234,179,8,.08));border-radius:50%;filter:blur(30px)"></div>
+          <div style="position:absolute;bottom:-10px;right:-10px;width:80px;height:80px;background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(236,72,153,.06));border-radius:50%;filter:blur(25px)"></div>
+          <div style="text-align:center;z-index:1">
+            {% if hero_right.discount_text %}
+            <div class="promo-discount-text" style="font-size:2rem;font-weight:900;line-height:1.15;background:linear-gradient(135deg,#eab308,#f97316,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:promoFadeBounce 1s ease-out forwards;opacity:0;transform:translateY(20px);letter-spacing:-.02em">{{ hero_right.discount_text }}</div>
+            {% endif %}
+            {% if hero_right.title %}
+            <div style="font-size:.95rem;font-weight:700;margin-top:8px;color:#e2e8f0;animation:promoFadeSlide .8s ease-out .2s forwards;opacity:0;transform:translateY(15px)">{{ hero_right.title }}</div>
+            {% endif %}
+            {% if hero_right.subtitle %}
+            <div style="font-size:.8rem;color:#94a3b8;margin-top:4px;animation:promoFadeSlide .8s ease-out .35s forwards;opacity:0;transform:translateY(15px)">{{ hero_right.subtitle }}</div>
+            {% endif %}
+            {% if hero_right.product %}
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;animation:promoFadeSlide .8s ease-out .5s forwards;opacity:0;transform:translateY(15px)">
+              {% if hero_right.product.image %}
+              <img src="{{ hero_right.product.image.url }}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:2px solid rgba(168,85,247,.3)" />
+              {% endif %}
+              <div style="text-align:left">
+                <div style="font-size:.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;font-weight:600">{{ hero_right.product.category.name }}</div>
+                <div style="font-size:.82rem;font-weight:700;color:#f1f5f9;line-height:1.2">{{ hero_right.product.name }}</div>
+              </div>
+            </div>
+            {% endif %}
+            {% if hero_right.button_text %}
+            <a href="{{ hero_right.button_url|default:'#' }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 22px;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;border-radius:8px;font-weight:700;font-size:.82rem;text-decoration:none;transition:all .2s;box-shadow:0 4px 14px rgba(168,85,247,.3);animation:promoFadeSlide .8s ease-out .65s forwards;opacity:0;transform:translateY(15px)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(168,85,247,.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(168,85,247,.3)'">{{ hero_right.button_text }} →</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.hero-marquee {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden;
+  opacity: .65; pointer-events: none; display: flex; align-items: center;
+}
+.hero-marquee-track {
+  display: flex; gap: 1.5rem; align-items: stretch;
+  animation: marqueeScroll 30s linear infinite;
+  width: max-content; height: 100%;
+}
+.hero-marquee-track:hover { animation-play-state: paused; }
+.hero-marquee-item {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(168,85,247,.12);
+  border-radius: 14px; padding: .4rem;
+}
+.hero-marquee-item img {
+  width: 80px; height: 100%; border-radius: 10px; object-fit: cover;
+  border: 1px solid rgba(168,85,247,.15); display: block;
+}
+.hero-marquee-placeholder {
+  width: 80px; height: 100%; border-radius: 10px; display: flex;
+  align-items: center; justify-content: center; font-size: 1.5rem;
+  background: rgba(255,255,255,.06);
+}
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes promoFadeBounce {
+  0% { opacity:0; transform:translateY(20px) scale(.95) }
+  60% { opacity:1; transform:translateY(-5px) scale(1.02) }
+  80% { transform:translateY(2px) scale(.99) }
+  100% { opacity:1; transform:translateY(0) scale(1) }
+}
+@keyframes promoFadeSlide {
+  0% { opacity:0; transform:translateY(15px) }
+  100% { opacity:1; transform:translateY(0) }
+}
+.hero-promo-card { transition: transform .3s ease; }
+.hero-promo-card:hover { transform: scale(1.02); }
+</style>
+<script>
+(function(){
+  var logos = ["{% static 'img/logo1.jpeg' %}", "{% static 'img/logo2.jpeg' %}"];
+  var idx = 0;
+  setInterval(function(){
+    idx = (idx + 1) % logos.length;
+    var el = document.getElementById('heroLogo');
+    if(el) el.src = logos[idx];
+  }, 30000);
+})();
+</script>
+
+<section class="section" id="categories">
+  <div class="container">
+    <div class="section-head">
+      <h2>BROWSE CATEGORIES</h2>
+      <a href="{% url 'core:product_list' %}">All products →</a>
+    </div>
+    <div class="cat-grid">
+      {% for c in categories %}
+      <a class="cat-card" href="{{ c.get_absolute_url }}">
+        <div class="cat-img">
+          {% if c.image %}<img src="{{ c.image.url }}" alt="{{ c.name }}">{% endif %}
+        </div>
+        <div class="cat-name">{{ c.name|title }}</div>
+      </a>
+      {% empty %}
+      <p style="color:var(--text-muted)">No categories yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if featured %}
+<section class="section" id="featured">
+  <div class="container">
+    <div class="section-head">
+      <h2>FEATURED PRODUCTS</h2>
+      <a href="{% url 'core:product_list' %}">See all →</a>
+    </div>
+    <div class="product-grid">
+      {% for product in featured %}
+        {% include "core/_product_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>NEW ARRIVALS</h2>
+      <a href="{% url 'core:product_list' %}">See all →</a>
+    </div>
+    <div class="product-grid">
+      {% for product in new_arrivals %}
+        {% include "core/_product_card.html" %}
+      {% empty %}
+        <p style="color:var(--text-muted)">No products yet. Add some from the <a href="{% url 'dashboard:supplier_dashboard' %}">control panel</a>.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      window.addEventListener('scroll', function() {
+        header.classList.toggle('scrolled', window.scrollY > 60);
+      });
+    }
+  })();
+</script>
+{% endblock %}

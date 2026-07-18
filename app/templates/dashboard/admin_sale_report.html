@@ -1,0 +1,421 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+
+{% block dash_title %}Sale Report{% endblock %}
+{% block dash_heading %}Sale Report{% endblock %}
+
+{% block dash_content %}
+
+<style>
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    body { background:#fff; }
+  }
+</style>
+
+<!-- ═══ FILTER BAR ═══ -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">City</label>
+        <select name="city" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Cities</option>
+          {% for c in all_cities %}
+          <option value="{{ c }}" {% if f_city == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Status</label>
+        <select name="status" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Statuses</option>
+          {% for s in all_statuses %}
+          <option value="{{ s }}" {% if f_status == s %}selected{% endif %}>{{ s|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Category</label>
+        <select name="category" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Categories</option>
+          {% for c in all_categories %}
+          <option value="{{ c }}" {% if f_category == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date From</label>
+        <input type="date" name="date_from" value="{{ f_date_from }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date To</label>
+        <input type="date" name="date_to" value="{{ f_date_to }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Granularity</label>
+        <select name="granularity" class="form-input" style="padding:.5rem .75rem">
+          <option value="daily" {% if f_granularity == "daily" %}selected{% endif %}>Daily</option>
+          <option value="weekly" {% if f_granularity == "weekly" %}selected{% endif %}>Weekly</option>
+          <option value="monthly" {% if f_granularity == "monthly" %}selected{% endif %}>Monthly</option>
+          <option value="yearly" {% if f_granularity == "yearly" %}selected{% endif %}>Yearly</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+        <a href="{% url 'dashboard:admin_sale_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ KPI CARDS ═══ -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Total Orders</div>
+    <div class="value">{{ total_orders }}</div>
+    <div class="sub">{{ total_qty }} items sold</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Total Revenue</div>
+    <div class="value" style="color:var(--green)">{% money total_revenue %}</div>
+    <div class="sub">{{ paid_pct }}% paid</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Avg Order Value</div>
+    <div class="value">{% money aov %}</div>
+    <div class="sub">{{ avg_qty_per_order }} items/order avg</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Fulfillment Rate</div>
+    <div class="value" style="color:{% if fulfillment_rate >= 80 %}var(--green){% elif fulfillment_rate >= 50 %}var(--orange){% else %}var(--red){% endif %}">{{ fulfillment_rate }}%</div>
+    <div class="sub">{{ delivered_count }} delivered</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Cancel Rate</div>
+    <div class="value" style="color:{% if cancel_rate <= 5 %}var(--green){% elif cancel_rate <= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ cancel_rate }}%</div>
+    <div class="sub">Cancelled orders</div>
+  </div>
+</div>
+
+<!-- ═══ REVENUE TREND + STATUS DIST ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Revenue Analysis</h2>
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Revenue & Orders Trend</div>
+    <div class="card-body"><canvas id="revenueTrendChart" height="260"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Orders by Status</div>
+    <div class="card-body"><canvas id="statusPie" height="260"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ PRODUCT PERFORMANCE ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Product Performance</h2>
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Top Products by Revenue</div>
+    <div class="card-body"><canvas id="topProductsChart" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Top Categories by Revenue</div>
+    <div class="card-body"><canvas id="topCategoriesChart" height="300"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Detailed Product Breakdown</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Product</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Qty Sold</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Orders</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Revenue</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Avg/Order</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in top_products %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;font-weight:600">{{ p.product__name }}</td>
+          <td style="padding:10px 12px">{{ p.total_qty }}</td>
+          <td style="padding:10px 12px">{{ p.order_count }}</td>
+          <td style="padding:10px 12px;font-weight:700;color:var(--green)">{% money p.total_revenue %}</td>
+          <td style="padding:10px 12px">{% if p.order_count %}{% money p.avg_per_order %}{% else %}-{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">No product data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ REGIONAL & TIME ANALYSIS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Regional & Time Analysis</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Sales by City</div>
+    <div class="card-body"><canvas id="cityChart" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Orders by Hour of Day</div>
+    <div class="card-body"><canvas id="hourlyChart" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Orders by Day of Week</div>
+    <div class="card-body"><canvas id="dowChart" height="300"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ PAYMENT & VALUE ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Payment & Order Value</h2>
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Payment Status</div>
+    <div class="card-body"><canvas id="paymentPie" height="260"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Order Value Distribution</div>
+    <div class="card-body"><canvas id="valueDistChart" height="260"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ RECENT ORDERS ═══ -->
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Recent Orders</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table id="ordersTable" style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">#</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Customer</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">City</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Status</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Paid</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Total</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in recent_orders %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;color:var(--muted)">#{{ o.id }}</td>
+          <td style="padding:10px 12px;font-weight:600">{{ o.first_name }} {{ o.last_name }}</td>
+          <td style="padding:10px 12px">{{ o.city }}</td>
+          <td style="padding:10px 12px"><span class="badge badge-{% if o.status == 'delivered' %}green{% elif o.status == 'cancelled' %}red{% elif o.status == 'paid' %}blue{% elif o.status == 'shipped' %}purple{% else %}yellow{% endif %}">{{ o.get_status_display }}</span></td>
+          <td style="padding:10px 12px">{% if o.paid %}<span style="color:var(--green)">Yes</span>{% else %}<span style="color:var(--red)">No</span>{% endif %}</td>
+          <td style="padding:10px 12px;font-weight:700">{% money o.get_total_cost %}</td>
+          <td style="padding:10px 12px;color:var(--muted)">{{ o.created|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted)">No orders found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var revTrend = {{ revenue_trend|safe }};
+  var statusData = {{ status_data|safe }};
+  var topProd = {{ top_products|safe }};
+  var topCat = {{ top_categories|safe }};
+  var cityData = {{ city_sales|safe }};
+  var hourlyData = {{ hourly_data|safe }};
+  var dowData = {{ dow_data|safe }};
+  var paymentData = {{ payment_data|safe }};
+  var valueDist = {{ value_dist|safe }};
+
+  // 1. Revenue Trend
+  if(revTrend.length) {
+    new Chart(document.getElementById('revenueTrendChart'), {
+      type: 'line',
+      data: {
+        labels: revTrend.map(d => d.label),
+        datasets: [{
+          label: 'Revenue',
+          data: revTrend.map(d => d.revenue),
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79,70,229,.08)',
+          fill: true, tension: .4, yAxisID: 'y'
+        },{
+          label: 'Orders',
+          data: revTrend.map(d => d.count),
+          borderColor: '#16a34a',
+          borderDash: [5,5], tension: .4, yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '\u09F3' + v.toLocaleString() } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  }
+
+  // 2. Status Pie
+  if(statusData.length) {
+    var sColors = { 'pending':'#f59e0b','paid':'#3b82f6','shipped':'#8b5cf6','delivered':'#10b981','cancelled':'#ef4444' };
+    new Chart(document.getElementById('statusPie'), {
+      type: 'doughnut',
+      data: {
+        labels: statusData.map(d => d.status.charAt(0).toUpperCase() + d.status.slice(1)),
+        datasets: [{ data: statusData.map(d => d.count), backgroundColor: statusData.map(d => sColors[d.status] || '#94a3b8'), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // 3. Top Products Bar
+  if(topProd.length) {
+    var prods = topProd.slice(0, 10);
+    new Chart(document.getElementById('topProductsChart'), {
+      type: 'bar',
+      data: {
+        labels: prods.map(d => d.product__name),
+        datasets: [{
+          label: 'Revenue',
+          data: prods.map(d => d.total_revenue),
+          backgroundColor: '#4f46e5', borderRadius: 6
+        }]
+      },
+      options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 4. Top Categories Bar
+  if(topCat.length) {
+    var cats = topCat.slice(0, 8);
+    new Chart(document.getElementById('topCategoriesChart'), {
+      type: 'bar',
+      data: {
+        labels: cats.map(d => d.product__category__name || 'Uncategorized'),
+        datasets: [{
+          label: 'Revenue',
+          data: cats.map(d => d.total_revenue),
+          backgroundColor: '#8b5cf6', borderRadius: 6
+        }]
+      },
+      options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 5. City Sales
+  if(cityData.length) {
+    var cities = cityData.slice(0, 10);
+    new Chart(document.getElementById('cityChart'), {
+      type: 'bar',
+      data: {
+        labels: cities.map(d => d.city),
+        datasets: [{
+          label: 'Revenue',
+          data: cities.map(d => d.revenue),
+          backgroundColor: ['#4f46e5','#7c3aed','#2563eb','#16a34a','#ea580c','#0891b2','#db2777','#65a30d','#d97706','#6366f1'],
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 6. Hourly
+  if(hourlyData.length) {
+    var hours = Array.from({length:24}, (_, i) => i);
+    var hourMap = {};
+    hourlyData.forEach(d => hourMap[d.hour] = d.count);
+    new Chart(document.getElementById('hourlyChart'), {
+      type: 'bar',
+      data: {
+        labels: hours.map(h => h + ':00'),
+        datasets: [{
+          label: 'Orders',
+          data: hours.map(h => hourMap[h] || 0),
+          backgroundColor: '#06b6d4', borderRadius: 4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+
+  // 7. Day of Week
+  if(dowData.length) {
+    new Chart(document.getElementById('dowChart'), {
+      type: 'bar',
+      data: {
+        labels: dowData.map(d => d.day),
+        datasets: [{
+          label: 'Orders',
+          data: dowData.map(d => d.count),
+          backgroundColor: '#f59e0b', borderRadius: 4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+
+  // 8. Payment Pie
+  if(paymentData.length) {
+    new Chart(document.getElementById('paymentPie'), {
+      type: 'doughnut',
+      data: {
+        labels: paymentData.map(d => d.label),
+        datasets: [{ data: paymentData.map(d => d.revenue), backgroundColor: ['#10b981','#ef4444'], borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // 9. Value Distribution
+  if(valueDist.length) {
+    new Chart(document.getElementById('valueDistChart'), {
+      type: 'bar',
+      data: {
+        labels: valueDist.map(d => d.range),
+        datasets: [{
+          label: 'Orders',
+          data: valueDist.map(d => d.count),
+          backgroundColor: '#6366f1', borderRadius: 6
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+});
+
+function exportCSV() {
+  var table = document.getElementById('ordersTable');
+  if (!table) return;
+  var rows = [];
+  for (var i = 0; i < table.rows.length; i++) {
+    var row = [], cols = table.rows[i].cells;
+    for (var j = 0; j < cols.length; j++) {
+      var text = cols[j].innerText.replace(/"/g, '""').replace(/\n/g, ' ');
+      row.push('"' + text + '"');
+    }
+    rows.push(row.join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sale_report.csv';
+  a.click();
+}
+</script>
+
+{% endblock %}

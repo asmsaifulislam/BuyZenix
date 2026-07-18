@@ -1,0 +1,23 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Categories{% endblock %}
+{% block dash_heading %}Categories{% endblock %}
+
+{% block dash_content %}
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table>
+      <thead><tr><th>Name</th><th>Slug</th><th>Products</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for c in categories %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td>{{ c.slug }}</td>
+          <td>{{ c.product_count }}</td>
+          <td><a href="{% url 'dashboard:admin_category_delete' c.pk %}" class="btn btn-sm btn-danger">Delete</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

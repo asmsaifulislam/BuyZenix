@@ -1,0 +1,29 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Pages{% endblock %}
+{% block dash_heading %}Business Pages{% endblock %}
+{% block dash_actions %}<a href="{% url 'dashboard:admin_page_create' %}" class="btn btn-primary btn-sm">+ Add Page</a>{% endblock %}
+
+{% block dash_content %}
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table>
+      <thead><tr><th>Title</th><th>Slug</th><th>Published</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for p in pages %}
+        <tr>
+          <td><strong>{{ p.title }}</strong></td>
+          <td>/{{ p.slug }}/</td>
+          <td>{% if p.is_published %}<span class="badge badge-green">Published</span>{% else %}<span class="badge badge-yellow">Draft</span>{% endif %}</td>
+          <td>
+            <a href="{% url 'dashboard:admin_page_edit' p.pk %}" class="btn btn-sm btn-outline">Edit</a>
+            <a href="{% url 'dashboard:admin_page_delete' p.pk %}" class="btn btn-sm btn-danger" style="margin-left:.25rem">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem">No pages.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}{{ action }} Banner{% endblock %}
+{% block dash_heading %}{{ action }} Banner{% endblock %}
+{% block dash_content %}
+<div class="card" style="max-width:600px">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <div style="display:flex;gap:.5rem;margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary">{{ action }} Banner</button>
+        <a href="{% url 'dashboard:admin_banners' %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

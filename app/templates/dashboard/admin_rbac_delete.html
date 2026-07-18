@@ -1,0 +1,14 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Delete Group{% endblock %}
+{% block dash_content %}
+<h2>Delete Group</h2>
+<div style="margin-top:1.5rem;max-width:500px;padding:1.5rem;background:#fef2f2;border:1px solid #fecaca;border-radius:12px">
+  <p style="margin:0 0 .5rem;font-weight:600;color:#dc2626">⚠️ Are you sure?</p>
+  <p style="margin:0;color:#475569;font-size:.9rem">This will delete the group <strong>"{{ group.name }}"</strong>. Users in this group will lose all assigned permissions.</p>
+  <form method="post" style="margin-top:1rem;display:flex;gap:.5rem">
+    {% csrf_token %}
+    <button type="submit" class="btn" style="background:#dc2626;color:#fff">Yes, Delete</button>
+    <a href="{% url 'dashboard:rbac_groups' %}" class="btn btn-outline">Cancel</a>
+  </form>
+</div>
+{% endblock %}

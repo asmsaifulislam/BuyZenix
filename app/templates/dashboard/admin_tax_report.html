@@ -1,0 +1,608 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+
+{% block dash_title %}VAT & Tax Report{% endblock %}
+{% block dash_heading %}Unified VAT & Tax Dashboard{% endblock %}
+
+{% block dash_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block dash_content %}
+
+<style>
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    #taxMap { display:none !important; }
+    body { background:#fff; }
+  }
+  .tax-section-title {
+    font-size:1.1rem; font-weight:700; margin:2rem 0 1rem; color:var(--text);
+    padding-bottom:6px; border-bottom:2px solid #e2e8f0;
+  }
+  .tax-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; }
+  .tax-badge-green { background:#dcfce7; color:#166534; }
+  .tax-badge-red { background:#fee2e2; color:#991b1b; }
+  .tax-badge-orange { background:#ffedd5; color:#9a3412; }
+  .tax-badge-blue { background:#dbeafe; color:#1e40af; }
+</style>
+
+<!-- ═══ FILTER BAR ═══ -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Country</label>
+        <select name="country" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Countries</option>
+          {% for c in all_countries %}
+          <option value="{{ c }}" {% if f_country == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date From</label>
+        <input type="date" name="date_from" value="{{ f_date_from }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date To</label>
+        <input type="date" name="date_to" value="{{ f_date_to }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Granularity</label>
+        <select name="granularity" class="form-input" style="padding:.5rem .75rem">
+          <option value="daily" {% if f_granularity == "daily" %}selected{% endif %}>Daily</option>
+          <option value="monthly" {% if f_granularity == "monthly" %}selected{% endif %}>Monthly</option>
+          <option value="yearly" {% if f_granularity == "yearly" %}selected{% endif %}>Yearly</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+        <a href="{% url 'dashboard:admin_tax_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXECUTIVE SUMMARY ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text)">Executive Summary</h2>
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Total Revenue</div>
+    <div class="value" style="color:var(--blue)">৳{{ total_revenue|floatformat:0 }}</div>
+    <div class="sub">{{ total_orders_count }} orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">BD Net VAT</div>
+    <div class="value" style="color:{% if bd_net_vat >= 0 %}var(--orange){% else %}var(--green){% endif %}">৳{{ bd_net_vat|floatformat:0 }}</div>
+    <div class="sub">Output − Input VAT</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">BD Total Tax</div>
+    <div class="value" style="color:var(--red)">৳{{ bd_total_tax|floatformat:0 }}</div>
+    <div class="sub">VAT + Corp + AIT + TDS</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Intl Tax</div>
+    <div class="value" style="color:var(--orange)">৳{{ total_intl_tax|floatformat:0 }}</div>
+    <div class="sub">VAT + Duties + WHT</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Global Tax</div>
+    <div class="value" style="color:var(--red)">৳{{ total_global_tax|floatformat:0 }}</div>
+    <div class="sub">{{ tax_to_revenue_global }}% of revenue</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Refund Approved</div>
+    <div class="value" style="color:var(--green)">৳{{ total_refund_approved|floatformat:0 }}</div>
+    <div class="sub">{{ refund_approval_rate }}% approval rate</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Pending Refunds</div>
+    <div class="value" style="color:var(--orange)">৳{{ total_refund_pending|floatformat:0 }}</div>
+    <div class="sub">BD + International</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Tax/Revenue Ratio</div>
+    <div class="value" style="color:{% if tax_to_revenue_global <= 20 %}var(--green){% elif tax_to_revenue_global <= 30 %}var(--orange){% else %}var(--red){% endif %}">{{ tax_to_revenue_global }}%</div>
+    <div class="sub">Global tax burden</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: BANGLADESH VAT & TAX COMPLIANCE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="tax-section-title">1. Bangladesh VAT & Tax Compliance</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:1rem;margin-bottom:1.5rem">
+  <div class="stat-card" style="border-left:4px solid #4f46e5">
+    <div class="label">Output VAT (Sales)</div>
+    <div class="value" style="font-size:1rem;color:var(--blue)">৳{{ bd_output_vat|floatformat:0 }}</div>
+    <div class="sub">15% on sales</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #10b981">
+    <div class="label">Input VAT (Purchases)</div>
+    <div class="value" style="font-size:1rem;color:var(--green)">৳{{ bd_input_vat|floatformat:0 }}</div>
+    <div class="sub">15% on COGS</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #f59e0b">
+    <div class="label">Net VAT Liability</div>
+    <div class="value" style="font-size:1rem;color:{% if bd_net_vat >= 0 %}var(--orange){% else %}var(--green){% endif %}">৳{{ bd_net_vat|floatformat:0 }}</div>
+    <div class="sub">Output − Input</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #ef4444">
+    <div class="label">Corporate Tax</div>
+    <div class="value" style="font-size:1rem;color:var(--red)">৳{{ bd_corp_tax|floatformat:0 }}</div>
+    <div class="sub">27.5% on profit</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #8b5cf6">
+    <div class="label">AIT + TDS</div>
+    <div class="value" style="font-size:1rem;color:#8b5cf6">৳{{ bd_ait|floatformat:0 }} + ৳{{ bd_tds|floatformat:0 }}</div>
+    <div class="sub">5% import + 10% supplier WHT</div>
+  </div>
+</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Net VAT Liability Trend</div>
+    <div class="card-body"><canvas id="vatTrendLine" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Tax Breakdown (BD)</div>
+    <div class="card-body"><canvas id="bdTaxPie" height="300"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Corporate Tax Payments by Month</div>
+  <div class="card-body"><canvas id="corpTaxBar" height="240"></canvas></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: INTERNATIONAL VAT/GST & DUTIES -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="tax-section-title">2. International VAT/GST & Duties</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem">
+  <div class="stat-card">
+    <div class="label">Intl VAT/GST Collected</div>
+    <div class="value" style="color:var(--blue)">৳{{ total_intl_vat|floatformat:0 }}</div>
+    <div class="sub">Across all jurisdictions</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Import Duties</div>
+    <div class="value" style="color:var(--orange)">৳{{ total_intl_duties|floatformat:0 }}</div>
+    <div class="sub">By region & category</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Intl WHT</div>
+    <div class="value" style="color:#8b5cf6">৳{{ total_intl_wht|floatformat:0 }}</div>
+    <div class="sub">On intl supplier payments</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Total Intl Tax</div>
+    <div class="value" style="color:var(--red)">৳{{ total_intl_tax|floatformat:0 }}</div>
+    <div class="sub">VAT + Duties + WHT</div>
+  </div>
+</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">VAT/GST by Country</div>
+    <div class="card-body" style="overflow-x:auto">
+      <table id="intlTable" style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0">
+            <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Rate</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Revenue</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">VAT/GST</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Duties</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">WHT</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Total Tax</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in intl_data %}
+          <tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:8px 10px;font-weight:600">{{ d.country }}</td>
+            <td style="text-align:right;padding:8px 10px">{{ d.vat_rate }}%</td>
+            <td style="text-align:right;padding:8px 10px">৳{{ d.revenue|floatformat:0 }}</td>
+            <td style="text-align:right;padding:8px 10px;color:var(--blue)">৳{{ d.vat_collected|floatformat:0 }}</td>
+            <td style="text-align:right;padding:8px 10px;color:var(--orange)">৳{{ d.import_duties|floatformat:0 }}</td>
+            <td style="text-align:right;padding:8px 10px;color:#8b5cf6">৳{{ d.wht|floatformat:0 }}</td>
+            <td style="text-align:right;padding:8px 10px;font-weight:700;color:var(--red)">৳{{ d.total_tax|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">Tax Burden Distribution</div>
+    <div class="card-body"><canvas id="taxBurdenPie" height="300"></canvas></div>
+  </div>
+</div>
+
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Duties by Product Category</div>
+    <div class="card-body"><canvas id="dutiesCategoryBar" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Double Taxation Treaty Benefits</div>
+    <div class="card-body" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0">
+            <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Base WHT</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Treaty Rate</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Savings</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in treaty_savings %}
+          <tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:8px 10px;font-weight:600">{{ t.country }}</td>
+            <td style="text-align:right;padding:8px 10px">৳{{ t.base_wht|floatformat:0 }}</td>
+            <td style="text-align:right;padding:8px 10px"><span class="tax-badge tax-badge-green">{{ t.saving_pct }}% off</span></td>
+            <td style="text-align:right;padding:8px 10px;color:var(--green);font-weight:700">৳{{ t.saving|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: REFUNDS, CREDITS & ADJUSTMENTS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="tax-section-title">3. Refunds, Credits & Adjustments</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem">
+  <div class="stat-card" style="border-left:4px solid var(--green)">
+    <div class="label">Refund Approval Rate</div>
+    <div class="value" style="color:var(--green)">{{ refund_approval_rate }}%</div>
+    <div class="sub">Approved / Claimed</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid var(--blue)">
+    <div class="label">BD Refunds Claimed</div>
+    <div class="value" style="color:var(--blue)">৳{{ bd_refund_claimed|floatformat:0 }}</div>
+    <div class="sub">Export rebates + credits</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid var(--orange)">
+    <div class="label">Intl Refunds Claimed</div>
+    <div class="value" style="color:var(--orange)">৳{{ intl_refund_claimed|floatformat:0 }}</div>
+    <div class="sub">Across all markets</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid var(--red)">
+    <div class="label">BD Tax Adjustments</div>
+    <div class="value" style="color:{% if bd_tax_adjustments >= 0 %}var(--orange){% else %}var(--green){% endif %}">৳{{ bd_tax_adjustments|floatformat:0 }}</div>
+    <div class="sub">Overpayments / credits</div>
+  </div>
+</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Refund Trends (BD + International)</div>
+    <div class="card-body"><canvas id="refundTrendLine" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Refund Status</div>
+    <div class="card-body" style="padding:1.5rem">
+      <div style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:.85rem;font-weight:600">Approved</span>
+          <span style="font-size:.85rem;font-weight:700;color:var(--green)">৳{{ total_refund_approved|floatformat:0 }}</span>
+        </div>
+        <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden">
+          <div style="background:var(--green);height:100%;width:{% if total_refund_claimed %}{% widthratio total_refund_approved total_refund_claimed 100 %}{% else %}0{% endif %}%;border-radius:6px"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:.85rem;font-weight:600">Pending</span>
+          <span style="font-size:.85rem;font-weight:700;color:var(--orange)">৳{{ total_refund_pending|floatformat:0 }}</span>
+        </div>
+        <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden">
+          <div style="background:var(--orange);height:100%;width:{% if total_refund_claimed %}{% widthratio total_refund_pending total_refund_claimed 100 %}{% else %}0{% endif %}%;border-radius:6px"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:.85rem;font-weight:600">BD Refunds</span>
+          <span style="font-size:.85rem;font-weight:700">৳{{ bd_refund_approved|floatformat:0 }} / ৳{{ bd_refund_claimed|floatformat:0 }}</span>
+        </div>
+        <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden">
+          <div style="background:var(--blue);height:100%;width:{% if bd_refund_claimed %}{% widthratio bd_refund_approved bd_refund_claimed 100 %}{% else %}0{% endif %}%;border-radius:6px"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:.85rem;font-weight:600">Intl Refunds</span>
+          <span style="font-size:.85rem;font-weight:700">৳{{ intl_refund_approved|floatformat:0 }} / ৳{{ intl_refund_claimed|floatformat:0 }}</span>
+        </div>
+        <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden">
+          <div style="background:#8b5cf6;height:100%;width:{% if intl_refund_claimed %}{% widthratio intl_refund_approved intl_refund_claimed 100 %}{% else %}0{% endif %}%;border-radius:6px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: CASH FLOW IMPACT -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="tax-section-title">4. Cash Flow Impact</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem">
+  <div class="stat-card" style="border-left:4px solid var(--green)">
+    <div class="label">Cash Flow (Revenue − Tax)</div>
+    <div class="value" style="color:var(--green)">৳{{ total_revenue|floatformat:0 }}</div>
+    <div class="sub">Minus ৳{{ total_global_tax|floatformat:0 }} global tax</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid var(--red)">
+    <div class="label">Global Tax Burden</div>
+    <div class="value" style="color:{% if tax_to_revenue_global <= 20 %}var(--green){% elif tax_to_revenue_global <= 30 %}var(--orange){% else %}var(--red){% endif %}">{{ tax_to_revenue_global }}%</div>
+    <div class="sub">Tax payments / Revenue</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid var(--blue)">
+    <div class="label">Q1 Forecast</div>
+    <div class="value" style="color:var(--blue)">৳{{ cash_flow_tax.0.forecast_q1|floatformat:0 }}</div>
+    <div class="sub">Projected tax liability</div>
+  </div>
+</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Revenue vs Tax Payments (BD + Intl)</div>
+    <div class="card-body"><canvas id="cashFlowTaxArea" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Tax-to-Revenue Ratio</div>
+    <div class="card-body"><canvas id="taxRatioLine" height="300"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Monthly Tax Cash Flow Detail</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table id="cashFlowTable" style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:8px 10px;color:var(--muted)">Month</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Revenue</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">BD Tax</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Intl Tax</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Total Tax</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Tax/Revenue</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Q1 Forecast</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Q2 Forecast</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cf in cash_flow_tax %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:8px 10px;font-weight:600">{{ cf.month }}</td>
+          <td style="text-align:right;padding:8px 10px">৳{{ cf.revenue|floatformat:0 }}</td>
+          <td style="text-align:right;padding:8px 10px;color:var(--blue)">৳{{ cf.bd_tax|floatformat:0 }}</td>
+          <td style="text-align:right;padding:8px 10px;color:var(--orange)">৳{{ cf.intl_tax|floatformat:0 }}</td>
+          <td style="text-align:right;padding:8px 10px;font-weight:700;color:var(--red)">৳{{ cf.total_tax|floatformat:0 }}</td>
+          <td style="text-align:right;padding:8px 10px;color:{% if cf.tax_to_revenue <= 20 %}var(--green){% elif cf.tax_to_revenue <= 30 %}var(--orange){% else %}var(--red){% endif %}">{{ cf.tax_to_revenue }}%</td>
+          <td style="text-align:right;padding:8px 10px">৳{{ cf.forecast_q1|floatformat:0 }}</td>
+          <td style="text-align:right;padding:8px 10px">৳{{ cf.forecast_q2|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ ACTIONABLE INSIGHTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Bangladesh Compliance</div>
+      {% if bd_net_vat > 0 %}
+      <div style="font-size:1rem;font-weight:700;color:var(--orange)">Net VAT Due: ৳{{ bd_net_vat|floatformat:0 }}</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Ensure timely VAT filing. Consider input VAT optimization on eligible purchases.</div>
+      {% else %}
+      <div style="font-size:1rem;font-weight:700;color:var(--green)">VAT Credit: ৳{{ bd_net_vat|floatformat:0|cut:"-" }}</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Input VAT exceeds output. File for refund or carry forward credit.</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Supply Chain Optimization</div>
+      {% if total_intl_duties > total_intl_vat %}
+      <div style="font-size:1rem;font-weight:700;color:var(--red)">High Import Duties (৳{{ total_intl_duties|floatformat:0 }})</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Consider sourcing from treaty countries to leverage double taxation benefits.</div>
+      {% else %}
+      <div style="font-size:1rem;font-weight:700;color:var(--green)">Duties Well-Managed</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Explore further duty reductions through FTA utilization.</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Cash Flow Planning</div>
+      {% if tax_to_revenue_global > 25 %}
+      <div style="font-size:1rem;font-weight:700;color:var(--red)">Tax Burden {{ tax_to_revenue_global }}% of Revenue</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Plan quarterly tax reserves. Accelerate refund claims to improve cash position.</div>
+      {% else %}
+      <div style="font-size:1rem;font-weight:700;color:var(--green)">Tax Burden Manageable ({{ tax_to_revenue_global }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Maintain current structure. Forecast for next quarter: ৳{{ cash_flow_tax.0.forecast_q1|floatformat:0 }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var vatTrend = {{ bd_vat_trend|safe }};
+  var intlData = {{ intl_data|safe }};
+  var dutiesByCat = {{ duties_by_category|safe }};
+  var taxBurden = {{ tax_burden|safe }};
+  var refundTrend = {{ refund_trend|safe }};
+  var cashFlowTax = {{ cash_flow_tax|safe }};
+
+  // 1a. VAT Trend (Output vs Input vs Net)
+  if(vatTrend.length) {
+    new Chart(document.getElementById('vatTrendLine'), {
+      type: 'line',
+      data: {
+        labels: vatTrend.map(v => v.month),
+        datasets: [
+          { label: 'Output VAT', data: vatTrend.map(v => v.output_vat), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.08)', fill: true, tension: .4 },
+          { label: 'Input VAT', data: vatTrend.map(v => v.input_vat), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.08)', fill: true, tension: .4 },
+          { label: 'Net VAT', data: vatTrend.map(v => v.net_vat), borderColor: '#f59e0b', borderDash: [5,5], tension: .4 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 1b. BD Tax Breakdown Pie
+  new Chart(document.getElementById('bdTaxPie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Net VAT', 'Corporate Tax', 'AIT', 'TDS'],
+      datasets: [{
+        data: [{{ bd_net_vat }}, {{ bd_corp_tax }}, {{ bd_ait }}, {{ bd_tds }}],
+        backgroundColor: ['#4f46e5','#ef4444','#f59e0b','#8b5cf6'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // 1c. Corporate Tax by Month
+  if(vatTrend.length) {
+    new Chart(document.getElementById('corpTaxBar'), {
+      type: 'bar',
+      data: {
+        labels: vatTrend.map(v => v.month),
+        datasets: [
+          { label: 'Corporate Tax', data: vatTrend.map(v => v.corp_tax), backgroundColor: '#ef4444', borderRadius: 4 },
+          { label: 'AIT', data: vatTrend.map(v => v.ait), backgroundColor: '#f59e0b', borderRadius: 4 },
+          { label: 'TDS', data: vatTrend.map(v => v.tds), backgroundColor: '#8b5cf6', borderRadius: 4 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 2a. Tax Burden Pie
+  if(taxBurden.length) {
+    var colors = ['#4f46e5','#ef4444','#f59e0b','#10b981','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+    new Chart(document.getElementById('taxBurdenPie'), {
+      type: 'doughnut',
+      data: {
+        labels: taxBurden.map(t => t.country),
+        datasets: [{ data: taxBurden.map(t => t.tax), backgroundColor: colors.slice(0, taxBurden.length), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '45%', plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+    });
+  }
+
+  // 2b. Duties by Category
+  if(dutiesByCat.length) {
+    new Chart(document.getElementById('dutiesCategoryBar'), {
+      type: 'bar',
+      data: {
+        labels: dutiesByCat.map(d => d.category),
+        datasets: [
+          { label: 'Duties (৳)', data: dutiesByCat.map(d => d.duties), backgroundColor: '#f59e0b', borderRadius: 4, yAxisID: 'y' },
+          { label: 'Rate %', data: dutiesByCat.map(d => d.rate), type: 'line', borderColor: '#ef4444', backgroundColor: 'transparent', tension: .4, pointRadius: 4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '\u09F3' + v.toLocaleString() } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, max: 40, ticks: { callback: v => v + '%' } }
+        }
+      }
+    });
+  }
+
+  // 3. Refund Trends
+  if(refundTrend.length) {
+    new Chart(document.getElementById('refundTrendLine'), {
+      type: 'line',
+      data: {
+        labels: refundTrend.map(r => r.month),
+        datasets: [
+          { label: 'BD Refunds', data: refundTrend.map(r => r.bd_refund), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.08)', fill: true, tension: .4 },
+          { label: 'Intl Refunds', data: refundTrend.map(r => r.intl_refund), borderColor: '#ec4899', backgroundColor: 'rgba(236,72,153,.08)', fill: true, tension: .4 },
+          { label: 'Total', data: refundTrend.map(r => r.total), borderColor: '#10b981', borderDash: [5,5], tension: .4 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 4a. Cash Flow vs Tax (Area)
+  if(cashFlowTax.length) {
+    new Chart(document.getElementById('cashFlowTaxArea'), {
+      type: 'line',
+      data: {
+        labels: cashFlowTax.map(cf => cf.month),
+        datasets: [
+          { label: 'Revenue', data: cashFlowTax.map(cf => cf.revenue), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.12)', fill: true, tension: .4 },
+          { label: 'BD Tax', data: cashFlowTax.map(cf => cf.bd_tax), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.12)', fill: true, tension: .4 },
+          { label: 'Intl Tax', data: cashFlowTax.map(cf => cf.intl_tax), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.12)', fill: true, tension: .4 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 4b. Tax-to-Revenue Ratio
+  if(cashFlowTax.length) {
+    new Chart(document.getElementById('taxRatioLine'), {
+      type: 'line',
+      data: {
+        labels: cashFlowTax.map(cf => cf.month),
+        datasets: [{
+          label: 'Tax/Revenue %',
+          data: cashFlowTax.map(cf => cf.tax_to_revenue),
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,.1)',
+          fill: true, tension: .4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 40, ticks: { callback: v => v + '%' } } } }
+    });
+  }
+});
+
+function exportCSV() {
+  var table = document.getElementById('intlTable');
+  if (!table) return;
+  var rows = [];
+  for (var i = 0; i < table.rows.length; i++) {
+    var row = [], cols = table.rows[i].cells;
+    for (var j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+    rows.push(row.join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tax_report_intl.csv';
+  a.click();
+}
+</script>
+
+{% endblock %}

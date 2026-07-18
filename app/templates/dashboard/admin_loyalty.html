@@ -1,0 +1,78 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Loyalty Points | BuyZenix Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin_custom.css' %}?v=5" />
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="/dashboard/">Dashboard</a> &rsaquo; Loyalty Points
+</div>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:16px;font-weight:700">Loyalty Points</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px">
+    <h3 style="font-size:.9rem;font-weight:700;margin-bottom:12px">Top Users</h3>
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:1px solid #eee">
+          <th style="padding:8px;text-align:left;font-size:.72rem;text-transform:uppercase;color:#6b7280">User</th>
+          <th style="padding:8px;text-align:right;font-size:.72rem;text-transform:uppercase;color:#6b7280">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in top_users %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px;font-weight:500">{{ u.user__username }}</td>
+          <td style="padding:8px;text-align:right;font-weight:700;color:#2563eb">{{ u.total }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" style="padding:16px;text-align:center;color:#9ca3af">No data yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px">
+    <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">How It Works</h3>
+    <ul style="font-size:.85rem;color:#374151;line-height:1.8;padding-left:20px">
+      <li>Customers earn <strong>1 point per ৳1</strong> spent</li>
+      <li>Points are auto-credited on order completion</li>
+      <li>Points history is tracked per user</li>
+      <li>API: <code>/api/loyalty/</code> (login required)</li>
+    </ul>
+  </div>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+<table style="width:100%;border-collapse:collapse">
+  <thead>
+    <tr style="background:#111;color:#fff">
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">User</th>
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">Points</th>
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">Reason</th>
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in points %}
+    <tr style="border-bottom:1px solid #eee">
+      <td style="padding:10px 14px;font-weight:500">{{ p.user.username }}</td>
+      <td style="padding:10px 14px;font-weight:700;color:#16a34a">+{{ p.points }}</td>
+      <td style="padding:10px 14px;color:#6b7280">{{ p.reason }}</td>
+      <td style="padding:10px 14px;color:#6b7280;font-size:.82rem">{{ p.created|date:"M d, Y H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="padding:24px;text-align:center;color:#9ca3af">No loyalty activity yet</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

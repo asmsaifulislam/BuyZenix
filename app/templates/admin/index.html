@@ -1,0 +1,249 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Dashboard | BuyZenix Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin_custom.css' %}?v=5" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Cards -->
+<div class="bz-kpi-grid">
+  <div class="bz-kpi-card">
+    <div class="bz-kpi-icon" style="background:#eff6ff;color:#2563eb">৳</div>
+    <div>
+      <div class="bz-kpi-label">Revenue</div>
+      <div class="bz-kpi-value">{{ total_revenue }}</div>
+    </div>
+  </div>
+  <div class="bz-kpi-card">
+    <div class="bz-kpi-icon" style="background:#f0fdf4;color:#16a34a">#</div>
+    <div>
+      <div class="bz-kpi-label">Orders</div>
+      <div class="bz-kpi-value">{{ total_orders }}</div>
+    </div>
+  </div>
+  <div class="bz-kpi-card">
+    <div class="bz-kpi-icon" style="background:#fef2f2;color:#dc2626">P</div>
+    <div>
+      <div class="bz-kpi-label">Products</div>
+      <div class="bz-kpi-value">{{ total_products }}</div>
+    </div>
+  </div>
+  <div class="bz-kpi-card">
+    <div class="bz-kpi-icon" style="background:#f5f3ff;color:#7c3aed">U</div>
+    <div>
+      <div class="bz-kpi-label">Users</div>
+      <div class="bz-kpi-value">{{ total_users }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="bz-charts-grid">
+  <div class="bz-card">
+    <div class="bz-card-header">
+      <h3>Revenue Trend</h3>
+    </div>
+    <div class="bz-card-body">
+      <canvas id="revenueChart" height="200"></canvas>
+    </div>
+  </div>
+  <div class="bz-card">
+    <div class="bz-card-header">
+      <h3>Order Status</h3>
+    </div>
+    <div class="bz-card-body">
+      <canvas id="statusChart" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Tables -->
+<div class="bz-tables-grid">
+  <div class="bz-card">
+    <div class="bz-card-header">
+      <h3>Top Products</h3>
+    </div>
+    <div class="bz-card-body" style="padding:0">
+      <table class="bz-table">
+        <thead><tr><th>Product</th><th>Sold</th><th>Revenue</th></tr></thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr>
+            <td>{{ p.product__name }}</td>
+            <td>{{ p.total_sold }}</td>
+            <td class="bz-money">{{ p.total_revenue }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="bz-empty">No sales yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bz-card">
+    <div class="bz-card-header">
+      <h3>Recent Orders</h3>
+    </div>
+    <div class="bz-card-body" style="padding:0">
+      <table class="bz-table">
+        <thead><tr><th>#</th><th>Customer</th><th>Status</th><th>Total</th></tr></thead>
+        <tbody>
+          {% for o in recent_orders %}
+          <tr>
+            <td>{{ o.id }}</td>
+            <td>{{ o.first_name }} {{ o.last_name }}</td>
+            <td>
+              {% if o.status == 'delivered' %}
+                <span class="bz-badge bz-badge-green">{{ o.get_status_display }}</span>
+              {% elif o.status == 'cancelled' %}
+                <span class="bz-badge bz-badge-red">{{ o.get_status_display }}</span>
+              {% else %}
+                <span class="bz-badge bz-badge-yellow">{{ o.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="bz-money">{{ o.get_total_cost }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="bz-empty">No orders yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bz-card">
+    <div class="bz-card-header">
+      <h3>Low Stock</h3>
+    </div>
+    <div class="bz-card-body" style="padding:0">
+      <table class="bz-table">
+        <thead><tr><th>Product</th><th>Stock</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for p in low_stock %}
+          <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.stock }}</td>
+            <td>
+              {% if p.stock == 0 %}
+                <span class="bz-badge bz-badge-red">Out</span>
+              {% else %}
+                <span class="bz-badge bz-badge-yellow">Low</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="bz-empty">All stocked</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Links -->
+<div class="bz-quick-grid">
+  <a href="/dashboard/api-keys/" class="bz-quick-card">
+    <div class="bz-quick-icon">K</div>
+    <div>API Keys</div>
+  </a>
+  <a href="/dashboard/coupons/" class="bz-quick-card">
+    <div class="bz-quick-icon">C</div>
+    <div>Coupons</div>
+  </a>
+  <a href="/dashboard/audit-logs/" class="bz-quick-card">
+    <div class="bz-quick-icon">L</div>
+    <div>Audit Logs</div>
+  </a>
+  <a href="/dashboard/share-api/" class="bz-quick-card">
+    <div class="bz-quick-icon">S</div>
+    <div>Share API</div>
+  </a>
+  <a href="/dashboard/recommendations/" class="bz-quick-card">
+    <div class="bz-quick-icon">R</div>
+    <div>Recommendations</div>
+  </a>
+  <a href="/dashboard/loyalty/" class="bz-quick-card">
+    <div class="bz-quick-icon">P</div>
+    <div>Loyalty Points</div>
+  </a>
+  <a href="/dashboard/promotions/" class="bz-quick-card">
+    <div class="bz-quick-icon">%</div>
+    <div>Promotions</div>
+  </a>
+  <a href="/dashboard/banners/" class="bz-quick-card">
+    <div class="bz-quick-icon">B</div>
+    <div>Banners</div>
+  </a>
+  <a href="/dashboard/categories/" class="bz-quick-card">
+    <div class="bz-quick-icon">T</div>
+    <div>Categories</div>
+  </a>
+  <a href="/dashboard/settings/" class="bz-quick-card">
+    <div class="bz-quick-icon">G</div>
+    <div>Settings</div>
+  </a>
+</div>
+
+<script>
+(function(){
+  var dailyData = {{ daily_orders|safe }};
+  var statusData = {{ status_dist|safe }};
+
+  if(dailyData.length) {
+    new Chart(document.getElementById('revenueChart'), {
+      type: 'line',
+      data: {
+        labels: dailyData.map(function(d){ return d.date; }),
+        datasets: [{
+          label: 'Revenue',
+          data: dailyData.map(function(d){ return d.revenue || 0; }),
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,.08)',
+          fill: true,
+          tension: .4,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#2563eb'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  if(statusData.length) {
+    var colors = { pending: '#f59e0b', paid: '#2563eb', shipped: '#8b5cf6', delivered: '#16a34a', cancelled: '#dc2626' };
+    new Chart(document.getElementById('statusChart'), {
+      type: 'doughnut',
+      data: {
+        labels: statusData.map(function(s){ return s.status; }),
+        datasets: [{
+          data: statusData.map(function(s){ return s.count; }),
+          backgroundColor: statusData.map(function(s){ return colors[s.status] || '#9ca3af'; }),
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '65%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } }
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

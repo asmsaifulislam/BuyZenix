@@ -1,0 +1,403 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+
+{% block dash_title %}Customer Report{% endblock %}
+{% block dash_heading %}Customer Report{% endblock %}
+
+{% block dash_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block dash_content %}
+
+<style>
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    #regionMap { display:none !important; }
+    body { background:#fff; }
+  }
+  .funnel-bar { height:42px; border-radius:8px; display:flex; align-items:center; color:#fff; font-weight:700; font-size:.9rem; padding:0 16px; margin-bottom:8px; transition:width .6s ease; }
+  .persona-card { display:flex; flex-direction:column; align-items:center; padding:1.25rem; border-radius:12px; background:#f8fafc; border:1px solid #e2e8f0; text-align:center; }
+  .persona-card .persona-icon { font-size:2rem; margin-bottom:6px; }
+  .persona-card .persona-name { font-weight:700; font-size:.88rem; color:var(--text); }
+  .persona-card .persona-count { font-size:1.6rem; font-weight:800; color:var(--primary); margin-top:4px; }
+</style>
+
+<!-- ═══ FILTER BAR ═══ -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+      <div style="flex:1;min-width:160px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Region</label>
+        <select name="region" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Regions</option>
+          {% for c in all_cities %}
+          <option value="{{ c }}" {% if f_region == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date From</label>
+        <input type="date" name="date_from" value="{{ f_date_from }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date To</label>
+        <input type="date" name="date_to" value="{{ f_date_to }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Granularity</label>
+        <select name="granularity" class="form-input" style="padding:.5rem .75rem">
+          <option value="monthly" {% if f_granularity == "monthly" %}selected{% endif %}>Monthly</option>
+          <option value="yearly" {% if f_granularity == "yearly" %}selected{% endif %}>Yearly</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+        <a href="{% url 'dashboard:admin_customer_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXECUTIVE SUMMARY ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text)">Executive Summary</h2>
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Total Customers</div>
+    <div class="value">{{ total_customers }}</div>
+    <div class="sub">Unique buyers</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">New Customers</div>
+    <div class="value" style="color:var(--blue)">{{ new_customers }}</div>
+    <div class="sub">First-time buyers</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Returning Customers</div>
+    <div class="value" style="color:var(--green)">{{ returning_customers }}</div>
+    <div class="sub">Repeat buyers</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Retention Rate</div>
+    <div class="value" style="color:{% if retention_rate >= 30 %}var(--green){% elif retention_rate >= 15 %}var(--orange){% else %}var(--red){% endif %}">{{ retention_rate }}%</div>
+    <div class="sub">Returning / Total</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Churn Rate</div>
+    <div class="value" style="color:{% if churn_rate <= 70 %}var(--green){% elif churn_rate <= 85 %}var(--orange){% else %}var(--red){% endif %}">{{ churn_rate }}%</div>
+    <div class="sub">Did not return</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Avg CLV</div>
+    <div class="value" style="color:var(--purple)">৳{{ avg_clv|floatformat:0 }}</div>
+    <div class="sub">Customer lifetime value</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Avg Order Value</div>
+    <div class="value" style="color:var(--indigo)">৳{{ avg_aov|floatformat:0 }}</div>
+    <div class="sub">Per order average</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Avg Purchase Freq</div>
+    <div class="value">{{ avg_freq }}</div>
+    <div class="sub">Orders per customer</div>
+  </div>
+</div>
+
+<!-- ═══ 1. CUSTOMER ACQUISITION ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">1. Customer Acquisition</h2>
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">New vs Returning Customers</div>
+    <div class="card-body"><canvas id="acquisitionBar"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Retention Trend</div>
+    <div class="card-body"><canvas id="retentionLine"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ 2. CLV ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">2. Customer Lifetime Value</h2>
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">CLV Distribution by Segment</div>
+    <div class="card-body"><canvas id="clvPie"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Avg CLV by Region</div>
+    <div class="card-body"><canvas id="clvRegionBar"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Top 10 High-Value Customers</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">#</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Customer</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Orders</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Total Spend</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">AOV</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">CLV</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in top10_customers %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;color:var(--muted)">{{ forloop.counter }}</td>
+          <td style="padding:10px 12px;font-weight:600">{{ c.user.username|default:"Guest" }}</td>
+          <td style="padding:10px 12px">{{ c.total_orders }}</td>
+          <td style="padding:10px 12px;font-weight:600;color:var(--green)">৳{{ c.total_spend|floatformat:0 }}</td>
+          <td style="padding:10px 12px">৳{{ c.aov|floatformat:0 }}</td>
+          <td style="padding:10px 12px;font-weight:700;color:var(--purple)">৳{{ c.clv|floatformat:0 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted)">No customer data</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ 3. SEGMENTATION ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">3. Segmentation &amp; Behavior</h2>
+
+<!-- Customer Personas -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:1rem;margin-bottom:2rem">
+  {% for p in persona_data %}
+  <div class="persona-card">
+    <div class="persona-icon">
+      {% if p.persona == "Bargain Hunters" %}🏷️
+      {% elif p.persona == "Regular Buyers" %}🛒
+      {% elif p.persona == "Loyal Customers" %}⭐
+      {% else %}👤{% endif %}
+    </div>
+    <div class="persona-name">{{ p.persona }}</div>
+    <div class="persona-count">{{ p.count }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <!-- Purchase Frequency -->
+  <div class="card">
+    <div class="card-header">Purchase Frequency Distribution</div>
+    <div class="card-body"><canvas id="freqBar"></canvas></div>
+  </div>
+  <!-- Conversion Funnel -->
+  <div class="card">
+    <div class="card-header">Conversion Funnel</div>
+    <div class="card-body" style="padding:1rem 1.5rem">
+      {% with max_count=funnel_data.0.count %}
+      {% for f in funnel_data %}
+      <div class="funnel-bar" style="width:{% widthratio f.count max_count 100 %}%;background:{% if forloop.counter == 1 %}#3b82f6{% elif forloop.counter == 2 %}#f59e0b{% elif forloop.counter == 3 %}#8b5cf6{% else %}#10b981{% endif %}">
+        {{ f.stage }}: {{ f.count }}
+      </div>
+      {% endfor %}
+      {% endwith %}
+    </div>
+  </div>
+</div>
+
+<!-- Sales by Region (Heatmap) -->
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Sales Heatmap by Region</div>
+  <div class="card-body" style="padding:0">
+    <div id="regionMap" class="map-container" style="height:400px;width:100%;position:relative;z-index:0"></div>
+  </div>
+</div>
+
+<!-- ═══ ACTIONABLE INSIGHTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Most Profitable Segment</div>
+      {% with best=clv_pie.0 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Premium Customers</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">{{ clv_pie.3.count }} customer{{ clv_pie.3.count|pluralize }} with CLV ৳20K+</div>
+      {% endwith %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Retention Focus</div>
+      {% if churn_rate > 60 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">High Churn ({{ churn_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Implement loyalty programs to reduce churn</div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Healthy Retention ({{ retention_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Continue nurturing repeat purchases</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Top Region</div>
+      {% with best_region=clv_region_data.0 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--blue)">{{ best_region.region }}</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Avg CLV: ৳{{ best_region.avg_clv|floatformat:0 }} ({{ best_region.count }} customers)</div>
+      {% endwith %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const acqData = {{ acquisition_trend|safe }};
+  const retData = {{ retention_trend|safe }};
+  const clvPie = {{ clv_pie|safe }};
+  const clvRegion = {{ clv_region_data|safe }};
+  const freqDist = {{ freq_data|safe }};
+  const heatmap = {{ heatmap_data|safe }};
+
+  // 1. Acquisition Bar Chart
+  new Chart(document.getElementById('acquisitionBar'), {
+    type: 'bar',
+    data: {
+      labels: acqData.map(d => d.month),
+      datasets: [
+        { label: 'New', data: acqData.map(d => d.new), backgroundColor: '#3b82f6', borderRadius: 6 },
+        { label: 'Returning', data: acqData.map(d => d.returning), backgroundColor: '#10b981', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+
+  // 2. Retention Line Chart
+  new Chart(document.getElementById('retentionLine'), {
+    type: 'line',
+    data: {
+      labels: retData.map(d => d.month),
+      datasets: [{
+        label: 'Retention Rate %',
+        data: retData.map(d => d.rate),
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139,92,246,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#8b5cf6'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+    }
+  });
+
+  // 3. CLV Pie Chart
+  new Chart(document.getElementById('clvPie'), {
+    type: 'doughnut',
+    data: {
+      labels: clvPie.map(d => d.segment),
+      datasets: [{
+        data: clvPie.map(d => d.count),
+        backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '55%',
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+
+  // 4. CLV by Region Bar
+  const topRegions = clvRegion.slice(0, 8);
+  new Chart(document.getElementById('clvRegionBar'), {
+    type: 'bar',
+    data: {
+      labels: topRegions.map(d => d.region),
+      datasets: [{
+        label: 'Avg CLV (৳)',
+        data: topRegions.map(d => d.avg_clv),
+        backgroundColor: '#8b5cf6',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true } }
+    }
+  });
+
+  // 5. Purchase Frequency Bar
+  new Chart(document.getElementById('freqBar'), {
+    type: 'bar',
+    data: {
+      labels: freqDist.map(d => d.label),
+      datasets: [{
+        label: 'Customers',
+        data: freqDist.map(d => d.count),
+        backgroundColor: '#06b6d4',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+
+  // 6. Region Heatmap (Leaflet)
+  if (document.getElementById('regionMap') && heatmap.length) {
+    const map = L.map('regionMap').setView([23.6850, 90.3563], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const maxRev = Math.max(...heatmap.map(h => h.revenue), 1);
+    heatmap.forEach(h => {
+      const r = Math.max(10, (h.revenue / maxRev) * 30);
+      const circle = L.circleMarker([h.lat, h.lng], {
+        radius: r,
+        fillColor: h.revenue > maxRev * 0.7 ? '#ef4444' : h.revenue > maxRev * 0.3 ? '#f59e0b' : '#3b82f6',
+        fillOpacity: 0.7,
+        color: '#fff',
+        weight: 2
+      }).addTo(map);
+      circle.bindPopup(
+        '<b>' + h.city + '</b><br>' +
+        'Revenue: ৳' + h.revenue.toLocaleString() + '<br>' +
+        'Orders: ' + h.count
+      );
+    });
+  }
+});
+
+function exportCSV() {
+  const rows = [['Customer', 'Orders', 'Total Spend', 'AOV', 'CLV']];
+  {% for c in top10_customers %}
+  rows.push(['{{ c.user.username|default:"Guest" }}', {{ c.total_orders }}, {{ c.total_spend|floatformat:0 }}, {{ c.aov|floatformat:0 }}, {{ c.clv|floatformat:0 }}]);
+  {% endfor %}
+  let csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'customer_report.csv';
+  a.click();
+}
+</script>
+
+{% endblock %}

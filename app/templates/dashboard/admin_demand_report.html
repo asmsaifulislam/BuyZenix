@@ -1,0 +1,623 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+
+{% block dash_title %}Product Demand Dashboard{% endblock %}
+{% block dash_heading %}Product Demand Dashboard{% endblock %}
+
+{% block dash_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block dash_content %}
+
+<style>
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    #demandMap { display:none !important; }
+    body { background:#fff; }
+  }
+  .demand-section-title {
+    font-size:1.1rem; font-weight:700; margin:2rem 0 1rem; color:var(--text);
+    padding-bottom:6px; border-bottom:2px solid #e2e8f0;
+  }
+  .synergy-badge { display:inline-block; padding:2px 10px; border-radius:10px; font-size:.72rem; font-weight:600; }
+  .synergy-high { background:#dcfce7; color:#166534; }
+  .synergy-medium { background:#ffedd5; color:#9a3412; }
+  .synergy-low { background:#fee2e2; color:#991b1b; }
+  .score-bar { display:inline-block; height:8px; border-radius:4px; vertical-align:middle; margin-left:6px; }
+</style>
+
+<!-- ═══ FILTER BAR ═══ -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:160px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Product Category</label>
+        <select name="category" class="form-input" style="padding:.5rem .75rem">
+          {% for p in all_products %}
+          <option value="{{ p }}" {% if f_category == p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:150px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">HS Code</label>
+        <input type="text" name="hs_code" value="{{ f_hs }}" placeholder="{{ hs_code }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Country</label>
+        <input type="text" name="country" value="{{ f_country }}" placeholder="All" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Year</label>
+        <select name="year" class="form-input" style="padding:.5rem .75rem">
+          <option value="2024" {% if f_year == "2024" %}selected{% endif %}>2024</option>
+          <option value="2023" {% if f_year == "2023" %}selected{% endif %}>2023</option>
+          <option value="2022" {% if f_year == "2022" %}selected{% endif %}>2022</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+        <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXECUTIVE SUMMARY ═══ -->
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
+  <h2 style="font-size:1.1rem;font-weight:700;color:var(--text);margin:0">Executive Summary</h2>
+  <span style="background:#4f46e5;color:#fff;padding:3px 12px;border-radius:12px;font-size:.8rem;font-weight:600">{{ selected_category }} (HS {{ hs_code }})</span>
+  <span style="color:var(--muted);font-size:.8rem">{{ hs_name }} / {{ unit }}</span>
+</div>
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">BD Exports</div>
+    <div class="value" style="color:var(--green)">${{ bd_export_value|floatformat:0 }}</div>
+    <div class="sub">{{ bd_export_qty|floatformat:0 }} {{ unit }}s</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">BD Imports</div>
+    <div class="value" style="color:var(--red)">${{ bd_import_value|floatformat:0 }}</div>
+    <div class="sub">{{ bd_import_qty|floatformat:0 }} {{ unit }}s</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Trade Balance</div>
+    <div class="value" style="color:{% if bd_trade_balance >= 0 %}var(--green){% else %}var(--red){% endif %}">{{ bd_trade_balance }}%</div>
+    <div class="sub">(Export − Import) / Import</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">BD Price (Import)</div>
+    <div class="value" style="color:var(--blue)">${{ bd_price_import }}</div>
+    <div class="sub">per {{ unit }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">BD Price (Export)</div>
+    <div class="value" style="color:#8b5cf6">${{ bd_price_export }}</div>
+    <div class="sub">per {{ unit }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Global Avg Price</div>
+    <div class="value" style="color:#f59e0b">${{ global_avg_price }}</div>
+    <div class="sub">Top importing countries</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">BD Export Share</div>
+    <div class="value" style="color:var(--green)">{{ bd_export_share }}%</div>
+    <div class="sub">of global imports</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Global Import Value</div>
+    <div class="value" style="color:var(--blue)">${{ total_global_imports|floatformat:0 }}</div>
+    <div class="sub">{{ total_global_qty|floatformat:0 }} {{ unit }}s total</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: NATIONAL (BANGLADESH) DEMAND & PRICING -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="demand-section-title">1. National (Bangladesh) Demand & Pricing</div>
+
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">BD Export vs Import Demand Trend (Monthly)</div>
+    <div class="card-body"><canvas id="bdDemandTrend" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">VAT & Duty Impact on Pricing</div>
+    <div class="card-body"><canvas id="vatImpactBar" height="300"></canvas></div>
+  </div>
+</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">BD Trade Value Breakdown</div>
+    <div class="card-body"><canvas id="bdTradePie" height="260"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Price Comparison</div>
+    <div class="card-body" style="padding:1.5rem">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:.85rem;color:var(--muted)">BD Import Price</div>
+        <div style="font-size:1.8rem;font-weight:800;color:var(--blue)">${{ bd_price_import }}</div>
+        <div style="font-size:.75rem;color:var(--muted)">per {{ unit }}</div>
+      </div>
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:.85rem;color:var(--muted)">BD Export Price</div>
+        <div style="font-size:1.8rem;font-weight:800;color:#8b5cf6">${{ bd_price_export }}</div>
+        <div style="font-size:.75rem;color:var(--muted)">per {{ unit }}</div>
+      </div>
+      <div style="text-align:center;border-top:2px solid #e2e8f0;padding-top:12px">
+        <div style="font-size:.85rem;color:var(--muted)">Price Premium</div>
+        <div style="font-size:1.4rem;font-weight:700;color:{% if bd_price_export > bd_price_import %}var(--green){% else %}var(--red){% endif %}">{% if bd_price_import %}{% widthratio bd_price_export bd_price_import 100 %}{% else %}0{% endif %}%</div>
+        <div style="font-size:.75rem;color:var(--muted)">Export / Import</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: INTERNATIONAL DEMAND & PRICING -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="demand-section-title">2. International Demand & Pricing</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Top Importing Countries — Demand & Price per {{ unit|title }}</div>
+    <div class="card-body" style="overflow-x:auto">
+      <table id="intlTable" style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0">
+            <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Import Value</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Quantity</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Price/{{ unit }}</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Market Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in intl_importers_list %}
+          <tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:8px 10px;font-weight:600">{{ d.country }}</td>
+            <td style="text-align:right;padding:8px 10px">${{ d.import_value|floatformat:0 }}</td>
+            <td style="text-align:right;padding:8px 10px">{{ d.quantity|floatformat:0 }}</td>
+            <td style="text-align:right;padding:8px 10px;color:{% if d.price_per_unit > global_avg_price %}var(--green){% else %}var(--orange){% endif %}">${{ d.price_per_unit }}</td>
+            <td style="text-align:right;padding:8px 10px">
+              <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+                <span>{{ d.market_share }}%</span>
+                <div style="background:#e2e8f0;border-radius:3px;height:6px;width:60px">
+                  <div style="background:{% if d.market_share > 20 %}var(--blue){% elif d.market_share > 10 %}#8b5cf6{% else %}#94a3b8{% endif %};height:100%;width:{% widthratio d.market_share 100 100 %}%;border-radius:3px"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">Global Demand Map</div>
+    <div class="card-body" style="padding:0">
+      <div id="demandMap" class="map-container" style="height:420px;width:100%;position:relative;z-index:0"></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Global Demand Trend (2020–2024)</div>
+    <div class="card-body"><canvas id="globalDemandTrend" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Country-wise Price per {{ unit|title }}</div>
+    <div class="card-body"><canvas id="priceByCountryBar" height="280"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Country-wise Demand Growth (YoY %)</div>
+  <div class="card-body"><canvas id="countryGrowthBar" height="240"></canvas></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: CONSUMER INTEREST (GOOGLE TRENDS) -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="demand-section-title">3. Consumer Interest (Search Trends)</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Search Interest by Region</div>
+    <div class="card-body"><canvas id="trendRegionBar" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Search Trend Over Time</div>
+    <div class="card-body"><canvas id="trendTimeLine" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Related Search Queries</div>
+    <div class="card-body" style="padding:1rem">
+      {% for q in related_queries %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;{% if not forloop.last %}border-bottom:1px solid #f1f5f9{% endif %}">
+        <div>
+          <div style="font-weight:600;font-size:.85rem">{{ q.query }}</div>
+          <div style="font-size:.7rem;color:var(--muted)">Related search</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700;color:var(--blue)">{{ q.interest }}</span>
+          <div style="background:#e2e8f0;border-radius:3px;height:6px;width:60px">
+            <div style="background:var(--blue);height:100%;width:{{ q.interest }}%;border-radius:3px"></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: COMBINED INSIGHTS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="demand-section-title">4. Combined Insights — Trade + Trends + Pricing</div>
+
+<!-- Target Countries -->
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Target Countries (High Demand × High Price × Growth)</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:8px 10px;color:var(--muted)">Rank</th>
+          <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Demand ($)</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Price/{{ unit }}</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">YoY Growth</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Opportunity Score</th>
+          <th style="text-align:center;padding:8px 10px;color:var(--muted)">Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in target_countries %}
+        <tr style="border-bottom:1px solid #f1f5f9;{% if t.recommendation == 'Strong' %}background:#f0fdf4{% endif %}">
+          <td style="padding:8px 10px;font-weight:700;color:var(--muted)">{{ forloop.counter }}</td>
+          <td style="padding:8px 10px;font-weight:600">{{ t.country }}</td>
+          <td style="text-align:right;padding:8px 10px">${{ t.demand|floatformat:0 }}</td>
+          <td style="text-align:right;padding:8px 10px;color:{% if t.price > global_avg_price %}var(--green){% else %}var(--orange){% endif %}">${{ t.price }}</td>
+          <td style="text-align:right;padding:8px 10px;color:{% if t.growth > 0 %}var(--green){% else %}var(--red){% endif %}">{{ t.growth }}%</td>
+          <td style="text-align:right;padding:8px 10px;font-weight:700">
+            {{ t.score }}
+            <span class="score-bar" style="width:{% widthratio t.score 10 50 %}px;background:{% if t.score > 3 %}var(--green){% elif t.score > 1.5 %}#f59e0b{% else %}#94a3b8{% endif %}"></span>
+          </td>
+          <td style="text-align:center;padding:8px 10px">
+            {% if t.recommendation == "Strong" %}
+            <span class="synergy-badge synergy-high">Strong</span>
+            {% elif t.recommendation == "Moderate" %}
+            <span class="synergy-badge synergy-medium">Moderate</span>
+            {% else %}
+            <span class="synergy-badge synergy-low">Weak</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Overlay: Demand vs Search Interest -->
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Demand Index vs Search Interest (Overlay)</div>
+    <div class="card-body"><canvas id="overlayScatter" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Synergy Analysis</div>
+    <div class="card-body" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0">
+            <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Demand Idx</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Search</th>
+            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Price</th>
+            <th style="text-align:center;padding:8px 10px;color:var(--muted)">Synergy</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in overlay_data %}
+          <tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:8px 10px;font-weight:600">{{ o.country }}</td>
+            <td style="text-align:right;padding:8px 10px">{{ o.demand_index }}</td>
+            <td style="text-align:right;padding:8px 10px">{{ o.search_interest }}</td>
+            <td style="text-align:right;padding:8px 10px">${{ o.price }}</td>
+            <td style="text-align:center;padding:8px 10px">
+              {% if o.synergy == "High" %}
+              <span class="synergy-badge synergy-high">High</span>
+              {% elif o.synergy == "Medium" %}
+              <span class="synergy-badge synergy-medium">Medium</span>
+              {% else %}
+              <span class="synergy-badge synergy-low">Low</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ACTIONABLE INSIGHTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Export Strategy</div>
+      {% if bd_trade_balance < 0 %}
+      <div style="font-size:1rem;font-weight:700;color:var(--red)">Trade Deficit ({{ bd_trade_balance }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">BD imports exceed exports in {{ selected_category }}. Target {{ target_countries.0.country }} and {{ target_countries.1.country }} for export growth — they show high demand + price.</div>
+      {% else %}
+      <div style="font-size:1rem;font-weight:700;color:var(--green)">Trade Surplus ({{ bd_trade_balance }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Strong BD export position. Scale to {{ target_countries.0.country }} where demand and pricing are optimal.</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Pricing Opportunity</div>
+      {% if bd_price_export > global_avg_price %}
+      <div style="font-size:1rem;font-weight:700;color:var(--green)">BD Export Price Above Global Avg</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">BD commands a premium of ${{ bd_price_export|floatformat:0 }} vs global ${{ global_avg_price }}. Leverage quality positioning in premium markets.</div>
+      {% else %}
+      <div style="font-size:1rem;font-weight:700;color:var(--orange)">BD Export Price Below Global Avg</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Price gap of ${{ global_avg_price|floatformat:0 }} vs ${{ bd_price_export|floatformat:0 }}. Consider value addition or targeting price-sensitive markets.</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Search-Trade Synergy</div>
+      {% with high_count=overlay_data|length %}
+      <div style="font-size:1rem;font-weight:700;color:var(--blue)">High Synergy: {{ target_countries.0.country }}</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Combines high import demand, strong pricing, and growing consumer search interest. Prioritize marketing and distribution here.</div>
+      {% endwith %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var bdTrend = {{ bd_demand_trend|safe }};
+  var vatImpact = {{ vat_impact|safe }};
+  var intlData = {{ intl_importers_list|safe }};
+  var globalTrend = {{ global_demand_trend|safe }};
+  var countryGrowth = {{ country_growth|safe }};
+  var trendRegions = {{ trend_interest|safe }};
+  var trendTime = {{ trend_over_time|safe }};
+  var overlayData = {{ overlay_data|safe }};
+
+  // 1a. BD Demand Trend
+  if(bdTrend.length) {
+    new Chart(document.getElementById('bdDemandTrend'), {
+      type: 'line',
+      data: {
+        labels: bdTrend.map(d => d.month),
+        datasets: [
+          { label: 'Imports', data: bdTrend.map(d => d.import), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.08)', fill: true, tension: .4 },
+          { label: 'Exports', data: bdTrend.map(d => d.export), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.08)', fill: true, tension: .4 },
+          { label: 'Net', data: bdTrend.map(d => d.net), borderColor: '#4f46e5', borderDash: [5,5], tension: .4 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 1b. VAT Impact Bar
+  if(vatImpact.length) {
+    new Chart(document.getElementById('vatImpactBar'), {
+      type: 'bar',
+      data: {
+        labels: vatImpact.map(v => v.component),
+        datasets: [{
+          label: 'Price ($)',
+          data: vatImpact.map(v => v.value),
+          backgroundColor: ['#4f46e5','#f59e0b','#ef4444','#10b981'],
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 1c. BD Trade Pie
+  new Chart(document.getElementById('bdTradePie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Export Value', 'Import Value', 'VAT on Imports', 'Duty on Imports'],
+      datasets: [{
+        data: [{{ bd_export_value }}, {{ bd_import_value }}, {{ bd_vat_on_imports }}, {{ bd_duty_on_imports }}],
+        backgroundColor: ['#10b981','#ef4444','#f59e0b','#8b5cf6'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: { responsive: true, cutout: '50%', plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // 2a. Global Demand Trend
+  if(globalTrend.length) {
+    new Chart(document.getElementById('globalDemandTrend'), {
+      type: 'line',
+      data: {
+        labels: globalTrend.map(g => g.year),
+        datasets: [
+          { label: 'Import Value ($)', data: globalTrend.map(g => g.import_value), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.08)', fill: true, tension: .4, yAxisID: 'y' },
+          { label: 'Price/{{ unit|escapejs }}', data: globalTrend.map(g => g.price), borderColor: '#f59e0b', borderDash: [5,5], tension: .4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '$' + v.toLocaleString() } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => '$' + v } }
+        }
+      }
+    });
+  }
+
+  // 2b. Price by Country
+  if(intlData.length) {
+    new Chart(document.getElementById('priceByCountryBar'), {
+      type: 'bar',
+      data: {
+        labels: intlData.map(d => d.country),
+        datasets: [{
+          label: 'Price per {{ unit|escapejs }}',
+          data: intlData.map(d => d.price_per_unit),
+          backgroundColor: intlData.map(d => d.price_per_unit > {{ global_avg_price }} ? '#10b981' : '#f59e0b'),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + v } } } }
+    });
+  }
+
+  // 2c. Country Growth
+  if(countryGrowth.length) {
+    new Chart(document.getElementById('countryGrowthBar'), {
+      type: 'bar',
+      data: {
+        labels: countryGrowth.map(c => c.country),
+        datasets: [{
+          label: 'YoY Growth %',
+          data: countryGrowth.map(c => c.growth),
+          backgroundColor: countryGrowth.map(c => c.growth > 0 ? '#10b981' : '#ef4444'),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    });
+  }
+
+  // 3a. Trend by Region
+  if(trendRegions.length) {
+    new Chart(document.getElementById('trendRegionBar'), {
+      type: 'bar',
+      data: {
+        labels: trendRegions.map(t => t.region),
+        datasets: [{
+          label: 'Search Interest',
+          data: trendRegions.map(t => t.interest),
+          backgroundColor: trendRegions.map((_, i) => ['#4f46e5','#ef4444','#f59e0b','#10b981','#8b5cf6','#ec4899','#06b6d4','#84cc16'][i]),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+  }
+
+  // 3b. Trend Over Time
+  if(trendTime.length) {
+    new Chart(document.getElementById('trendTimeLine'), {
+      type: 'line',
+      data: {
+        labels: trendTime.map(t => t.month),
+        datasets: [{
+          label: 'Search Interest',
+          data: trendTime.map(t => t.interest),
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79,70,229,.1)',
+          fill: true, tension: .4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+  }
+
+  // 4. Overlay Scatter
+  if(overlayData.length) {
+    new Chart(document.getElementById('overlayScatter'), {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Countries',
+          data: overlayData.map(o => ({ x: o.demand_index, y: o.search_interest })),
+          backgroundColor: overlayData.map(o => o.synergy === 'High' ? '#10b981' : o.synergy === 'Medium' ? '#f59e0b' : '#ef4444'),
+          pointRadius: 10,
+          pointHoverRadius: 14
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                var o = overlayData[ctx.dataIndex];
+                return o.country + ' (Demand: ' + o.demand_index + ', Search: ' + o.search_interest + ')';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Demand Index' }, beginAtZero: true },
+          y: { title: { display: true, text: 'Search Interest' }, beginAtZero: true, max: 100 }
+        }
+      }
+    });
+  }
+
+  // Map
+  if(document.getElementById('demandMap') && intlData.length) {
+    var map = L.map('demandMap').setView([25, 40], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+    var COUNTRY_COORDS = {
+      "United States": [37.09, -95.71], "China": [35.86, 104.20], "Germany": [51.16, 10.45],
+      "Japan": [36.20, 138.25], "South Korea": [35.91, 127.77], "United Kingdom": [55.38, -3.44],
+      "India": [20.59, 78.96], "France": [46.23, 2.21], "Singapore": [1.35, 103.82],
+      "UAE": [23.42, 53.85], "Brazil": [-14.24, -51.93], "Turkey": [38.96, 35.24],
+      "Italy": [41.87, 12.57], "Spain": [40.46, -3.75], "Canada": [56.13, -106.35],
+      "Australia": [-25.27, 133.78], "Netherlands": [52.13, 5.29], "Indonesia": [-0.79, 113.92],
+      "Thailand": [15.87, 100.99], "Mexico": [23.63, -102.55], "Saudi Arabia": [23.89, 45.08],
+      "South Africa": [-30.56, 22.94], "Nigeria": [9.08, 8.68], "Egypt": [26.82, 30.80],
+      "Kenya": [-0.02, 37.91], "Sweden": [60.13, 18.64], "Denmark": [56.26, 9.50],
+      "Ireland": [53.14, -7.69], "Poland": [51.92, 19.15], "Argentina": [-38.42, -63.62],
+    };
+    var maxImport = Math.max(...intlData.map(d => d.import_value), 1);
+    intlData.forEach(function(d) {
+      var coords = COUNTRY_COORDS[d.country] || [25, 40];
+      var r = Math.max(8, Math.min(30, (d.import_value / maxImport) * 30));
+      var color = d.price_per_unit > {{ global_avg_price }} ? '#10b981' : '#f59e0b';
+      L.circleMarker(coords, { radius: r, fillColor: color, fillOpacity: 0.7, color: '#fff', weight: 2 })
+        .addTo(map)
+        .bindPopup('<b>' + d.country + '</b><br>Imports: $' + d.import_value.toLocaleString() + '<br>Price: $' + d.price_per_unit + '/{{ unit|escapejs }}<br>Share: ' + d.market_share + '%');
+    });
+  }
+});
+
+function exportCSV() {
+  var table = document.getElementById('intlTable');
+  if (!table) return;
+  var rows = [];
+  for (var i = 0; i < table.rows.length; i++) {
+    var row = [], cols = table.rows[i].cells;
+    for (var j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+    rows.push(row.join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'demand_report_{{ selected_category|escapejs }}.csv';
+  a.click();
+}
+</script>
+
+{% endblock %}

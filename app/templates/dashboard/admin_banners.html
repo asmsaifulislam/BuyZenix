@@ -1,0 +1,31 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Banners{% endblock %}
+{% block dash_heading %}Banners{% endblock %}
+{% block dash_actions %}<a href="{% url 'dashboard:admin_banner_create' %}" class="btn btn-primary btn-sm">+ Add Banner</a>{% endblock %}
+
+{% block dash_content %}
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table>
+      <thead><tr><th>Image</th><th>Title</th><th>Link</th><th>Active</th><th>Position</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for b in banners %}
+        <tr>
+          <td>{% if b.image %}<img src="{{ b.image.url }}" style="width:80px;height:40px;object-fit:cover;border-radius:6px" />{% else %}-{% endif %}</td>
+          <td><strong>{{ b.title }}</strong></td>
+          <td>{{ b.link_url|default:"-" }}</td>
+          <td>{% if b.is_active %}<span class="badge badge-green">Yes</span>{% else %}<span class="badge badge-red">No</span>{% endif %}</td>
+          <td>{{ b.position }}</td>
+          <td>
+            <a href="{% url 'dashboard:admin_banner_edit' b.pk %}" class="btn btn-sm btn-outline">Edit</a>
+            <a href="{% url 'dashboard:admin_banner_delete' b.pk %}" class="btn btn-sm btn-danger" style="margin-left:.25rem">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No banners.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

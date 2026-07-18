@@ -1,0 +1,27 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}{{ action }} Group{% endblock %}
+{% block dash_content %}
+<h2>{{ action }} Permission Group</h2>
+<form method="post" style="margin-top:1.5rem;max-width:700px">
+  {% csrf_token %}
+  <div class="form-group">
+    <label class="form-label">Group Name</label>
+    {{ form.name }}
+  </div>
+  <div class="form-group">
+    <label class="form-label">Permissions</label>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.5rem;max-height:400px;overflow-y:auto;padding:1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+      {% for perm in permissions %}
+      <label style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:.82rem;transition:background .15s" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'">
+        <input type="checkbox" name="permissions" value="{{ perm.id }}" {% if perm.id in selected_perms %}checked{% endif %} style="accent-color:#6366f1" />
+        <span><strong>{{ perm.codename }}</strong> <span style="color:#64748b">({{ perm.content_type.app_label }}.{{ perm.content_type.model }})</span></span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;gap:.75rem;margin-top:1.5rem">
+    <button type="submit" class="btn btn-primary">{{ action }} Group</button>
+    <a href="{% url 'dashboard:rbac_groups' %}" class="btn btn-outline">Cancel</a>
+  </div>
+</form>
+{% endblock %}

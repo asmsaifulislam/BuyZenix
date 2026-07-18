@@ -1,0 +1,41 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Users{% endblock %}
+{% block dash_heading %}User Management{% endblock %}
+
+{% block dash_content %}
+<div style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
+  <a href="{% url 'dashboard:admin_users' %}" class="btn btn-sm {% if not role_filter %}btn-primary{% else %}btn-outline{% endif %}">All</a>
+  <a href="{% url 'dashboard:admin_users' %}?role=customer" class="btn btn-sm {% if role_filter == 'customer' %}btn-primary{% else %}btn-outline{% endif %}">Customers</a>
+  <a href="{% url 'dashboard:admin_users' %}?role=supplier" class="btn btn-sm {% if role_filter == 'supplier' %}btn-primary{% else %}btn-outline{% endif %}">Suppliers</a>
+  <a href="{% url 'dashboard:admin_users' %}?role=admin" class="btn btn-sm {% if role_filter == 'admin' %}btn-primary{% else %}btn-outline{% endif %}">Admins</a>
+</div>
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table>
+      <thead><tr><th>Username</th><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong></td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.first_name }} {{ u.last_name }}</td>
+          <td>
+            {% if u.is_superuser %}<span class="badge badge-purple">Superuser</span>
+            {% elif u.profile.role == 'supplier' %}<span class="badge badge-blue">Supplier</span>
+            {% elif u.profile.role == 'admin' %}<span class="badge badge-yellow">Admin</span>
+            {% else %}<span class="badge badge-green">Customer</span>{% endif %}
+          </td>
+          <td>{% if u.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-red">Disabled</span>{% endif %}</td>
+          <td>
+            <a href="{% url 'dashboard:admin_user_edit' u.pk %}" class="btn btn-sm btn-outline">Edit</a>
+            {% if request.user != u %}
+            <a href="{% url 'dashboard:admin_user_toggle' u.pk %}" class="btn btn-sm {% if u.is_active %}btn-danger{% else %}btn-success{% endif %}" style="margin-left:.25rem">{% if u.is_active %}Disable{% else %}Enable{% endif %}</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,536 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+
+{% block dash_title %}Finance Report{% endblock %}
+{% block dash_heading %}Finance Report{% endblock %}
+
+{% block dash_content %}
+
+<style>
+  @media print {
+    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
+    .main { margin-left:0 !important; }
+    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
+    body { background:#fff; }
+  }
+</style>
+
+<!-- ═══ FILTER BAR ═══ -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body" style="padding:1rem 1.25rem">
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">City</label>
+        <select name="city" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Cities</option>
+          {% for c in all_cities %}
+          <option value="{{ c }}" {% if f_city == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Category</label>
+        <select name="category" class="form-input" style="padding:.5rem .75rem">
+          <option value="">All Categories</option>
+          {% for cat in all_categories %}
+          <option value="{{ cat }}" {% if f_category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date From</label>
+        <input type="date" name="date_from" value="{{ f_date_from }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Date To</label>
+        <input type="date" name="date_to" value="{{ f_date_to }}" class="form-input" style="padding:.5rem .75rem">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Granularity</label>
+        <select name="granularity" class="form-input" style="padding:.5rem .75rem">
+          <option value="daily" {% if f_granularity == "daily" %}selected{% endif %}>Daily</option>
+          <option value="monthly" {% if f_granularity == "monthly" %}selected{% endif %}>Monthly</option>
+          <option value="yearly" {% if f_granularity == "yearly" %}selected{% endif %}>Yearly</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+        <a href="{% url 'dashboard:admin_finance_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      </div>
+    </form>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
+      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXECUTIVE SUMMARY ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text)">Executive Summary</h2>
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">Total Revenue</div>
+    <div class="value" style="color:var(--blue)">৳{{ total_revenue|floatformat:0 }}</div>
+    <div class="sub">{{ total_orders_count }} orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">COGS</div>
+    <div class="value" style="color:var(--orange)">৳{{ total_cogs|floatformat:0 }}</div>
+    <div class="sub">Cost of Goods Sold</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Gross Margin</div>
+    <div class="value" style="color:{% if gross_margin_pct >= 40 %}var(--green){% elif gross_margin_pct >= 25 %}var(--orange){% else %}var(--red){% endif %}">{{ gross_margin_pct }}%</div>
+    <div class="sub">Revenue − COGS</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Net Margin</div>
+    <div class="value" style="color:{% if net_margin_pct >= 15 %}var(--green){% elif net_margin_pct >= 5 %}var(--orange){% else %}var(--red){% endif %}">{{ net_margin_pct }}%</div>
+    <div class="sub">Net Income / Revenue</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Net Income</div>
+    <div class="value" style="color:{% if net_income >= 0 %}var(--green){% else %}var(--red){% endif %}">৳{{ net_income|floatformat:0 }}</div>
+    <div class="sub">After all expenses</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Total Refunds</div>
+    <div class="value" style="color:var(--red)">৳{{ total_refund_value|floatformat:0 }}</div>
+    <div class="sub">{{ refund_count }} orders ({{ refund_rate }}%)</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Total Discounts</div>
+    <div class="value" style="color:var(--orange)">৳{{ total_discount_value|floatformat:0 }}</div>
+    <div class="sub">{{ discount_rate }}% of revenue</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Net Cash Flow</div>
+    <div class="value" style="color:{% if net_cash_flow >= 0 %}var(--green){% else %}var(--red){% endif %}">৳{{ net_cash_flow|floatformat:0 }}</div>
+    <div class="sub">Current balance ৳{{ current_balance|floatformat:0 }}</div>
+  </div>
+</div>
+
+<!-- ═══ 1. PROFIT MARGINS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">1. Profit Margins</h2>
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Gross Margin by Category</div>
+    <div class="card-body"><canvas id="marginCategoryBar" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Revenue vs COGS by Region</div>
+    <div class="card-body"><canvas id="marginRegionBar" height="300"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Revenue vs Net Income Trend</div>
+  <div class="card-body"><canvas id="revenueNetTrend" height="260"></canvas></div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Top Products by Margin</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table id="marginTable" style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Product</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Category</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Revenue</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Qty Sold</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Gross Margin</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in product_margins %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;font-weight:600">{{ p.name }}</td>
+          <td style="padding:10px 12px">{{ p.category }}</td>
+          <td style="text-align:right;padding:10px 12px">৳{{ p.revenue|floatformat:0 }}</td>
+          <td style="text-align:right;padding:10px 12px">{{ p.quantity }}</td>
+          <td style="text-align:right;padding:10px 12px;color:{% if p.margin >= 45 %}var(--green){% elif p.margin >= 30 %}var(--orange){% else %}var(--red){% endif %}">{{ p.margin }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ 2. REFUNDS AND DISCOUNTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">2. Refunds & Discounts</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Refund Reasons</div>
+    <div class="card-body"><canvas id="refundReasonsPie" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Refunds Trend</div>
+    <div class="card-body"><canvas id="refundTrendLine" height="280"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Discounts by Category</div>
+    <div class="card-body"><canvas id="discountCategoryBar" height="280"></canvas></div>
+  </div>
+</div>
+
+<div class="grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Refund Rate vs Discount Rate</div>
+    <div class="card-body"><canvas id="refundDiscountCompare" height="240"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Refund Details</div>
+    <div class="card-body" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0">
+            <th style="text-align:left;padding:10px 12px;color:var(--muted)">Reason</th>
+            <th style="text-align:right;padding:10px 12px;color:var(--muted)">Count</th>
+            <th style="text-align:right;padding:10px 12px;color:var(--muted)">Value</th>
+            <th style="text-align:right;padding:10px 12px;color:var(--muted)">% of Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in refund_reasons_list %}
+          <tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:10px 12px;font-weight:600">{{ r.reason }}</td>
+            <td style="text-align:right;padding:10px 12px">{{ r.count }}</td>
+            <td style="text-align:right;padding:10px 12px">৳{{ r.value|floatformat:0 }}</td>
+            <td style="text-align:right;padding:10px 12px">{% widthratio r.count refund_count 100 %}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 3. CASH FLOW TRACKING ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">3. Cash Flow Tracking</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1.25rem;margin-bottom:2rem">
+  <div class="stat-card" style="border-left:4px solid var(--green)">
+    <div class="label">Avg Monthly Inflow</div>
+    <div class="value" style="color:var(--green)">৳{{ avg_monthly_inflow|floatformat:0 }}</div>
+    <div class="sub">From paid orders</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid var(--red)">
+    <div class="label">Avg Monthly Outflow</div>
+    <div class="value" style="color:var(--red)">৳{{ avg_monthly_outflow|floatformat:0 }}</div>
+    <div class="sub">COGS + OpEx + CapEx</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid var(--blue)">
+    <div class="label">Current Balance</div>
+    <div class="value" style="color:var(--blue)">৳{{ current_balance|floatformat:0 }}</div>
+    <div class="sub">Running cash position</div>
+  </div>
+</div>
+
+<div class="grid-2fr-1fr" style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-header">Cash Inflows vs Outflows</div>
+    <div class="card-body"><canvas id="cashFlowTrend" height="300"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Cash Balance Trend</div>
+    <div class="card-body"><canvas id="balanceTrend" height="300"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Free Cash Flow Trend</div>
+  <div class="card-body"><canvas id="freeCashFlowTrend" height="240"></canvas></div>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-header">Monthly Cash Flow Detail</div>
+  <div class="card-body" style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr style="border-bottom:2px solid #e2e8f0">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted)">Month</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Inflow</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Outflow</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Net Flow</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Free Cash Flow</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Balance</th>
+          <th style="text-align:right;padding:10px 12px;color:var(--muted)">Orders</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cf in cash_flow_trend %}
+        <tr style="border-bottom:1px solid #f1f5f9">
+          <td style="padding:10px 12px;font-weight:600">{{ cf.month }}</td>
+          <td style="text-align:right;padding:10px 12px;color:var(--green)">৳{{ cf.inflow|floatformat:0 }}</td>
+          <td style="text-align:right;padding:10px 12px;color:var(--red)">৳{{ cf.outflow|floatformat:0 }}</td>
+          <td style="text-align:right;padding:10px 12px;color:{% if cf.net >= 0 %}var(--green){% else %}var(--red){% endif %}">৳{{ cf.net|floatformat:0 }}</td>
+          <td style="text-align:right;padding:10px 12px;color:{% if cf.free_cf >= 0 %}var(--green){% else %}var(--red){% endif %}">৳{{ cf.free_cf|floatformat:0 }}</td>
+          <td style="text-align:right;padding:10px 12px">৳{{ cf.balance|floatformat:0 }}</td>
+          <td style="text-align:right;padding:10px 12px">{{ cf.orders }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ ACTIONABLE INSIGHTS ═══ -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1rem;margin-bottom:2rem">
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Pricing Strategy</div>
+      {% if gross_margin_pct < 35 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">Low Gross Margin ({{ gross_margin_pct }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Consider raising prices on low-margin categories or negotiating better supplier rates</div>
+      {% elif gross_margin_pct < 50 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--orange)">Moderate Gross Margin ({{ gross_margin_pct }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Focus on high-margin products to improve overall profitability</div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Healthy Gross Margin ({{ gross_margin_pct }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Maintain current pricing while exploring volume growth</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Refund Reduction</div>
+      {% if refund_rate > 8 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">High Refund Rate ({{ refund_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Improve quality control to reduce {{ refund_reasons_list.0.reason }} refunds</div>
+      {% elif refund_rate > 3 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--orange)">Moderate Refund Rate ({{ refund_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Address top refund reasons to minimize losses</div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Low Refund Rate ({{ refund_rate }}%)</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Great job! Continue maintaining product quality</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:1.25rem">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Cash Position</div>
+      {% if net_cash_flow >= 0 %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green)">Positive Cash Flow (৳{{ net_cash_flow|floatformat:0 }})</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Consider investments or expansion with available cash reserves</div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:700;color:var(--red)">Negative Cash Flow (৳{{ net_cash_flow|floatformat:0 }})</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Review expenses and improve collections to maintain liquidity</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var marginByCat = {{ margin_by_category|safe }};
+  var marginByRegion = {{ margin_by_region|safe }};
+  var revenueTrend = {{ revenue_trend|safe }};
+  var refundReasons = {{ refund_reasons_list|safe }};
+  var refundTrend = {{ refund_trend_list|safe }};
+  var discountByCat = {{ discount_by_category_list|safe }};
+  var cashFlowTrend = {{ cash_flow_trend|safe }};
+
+  // 1a. Margin by Category
+  if(marginByCat.length) {
+    new Chart(document.getElementById('marginCategoryBar'), {
+      type: 'bar',
+      data: {
+        labels: marginByCat.map(c => c.category),
+        datasets: [
+          { label: 'Revenue', data: marginByCat.map(c => c.revenue), backgroundColor: '#4f46e5', borderRadius: 4, yAxisID: 'y' },
+          { label: 'COGS', data: marginByCat.map(c => c.cogs), backgroundColor: '#f59e0b', borderRadius: 4, yAxisID: 'y' },
+          { label: 'Margin %', data: marginByCat.map(c => c.margin), type: 'line', borderColor: '#10b981', backgroundColor: 'transparent', tension: .4, yAxisID: 'y1', pointRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '\u09F3' + v.toLocaleString() } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, min: 0, max: 80, ticks: { callback: v => v + '%' } }
+        }
+      }
+    });
+  }
+
+  // 1b. Margin by Region
+  if(marginByRegion.length) {
+    new Chart(document.getElementById('marginRegionBar'), {
+      type: 'bar',
+      data: {
+        labels: marginByRegion.map(r => r.region),
+        datasets: [
+          { label: 'Revenue', data: marginByRegion.map(r => r.revenue), backgroundColor: '#6366f1', borderRadius: 4 },
+          { label: 'Margin %', data: marginByRegion.map(r => r.margin), type: 'line', borderColor: '#10b981', backgroundColor: 'transparent', tension: .4, pointRadius: 4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '\u09F3' + v.toLocaleString() } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, min: 0, max: 80, ticks: { callback: v => v + '%' } }
+        }
+      }
+    });
+  }
+
+  // 1c. Revenue vs Net Income Trend
+  if(revenueTrend.length) {
+    var netIncomeTrend = revenueTrend.map(function(r) {
+      var cogs = r.revenue * 0.58;
+      var opex = r.revenue * 0.18;
+      return { month: r.month, revenue: r.revenue, net: Math.round(r.revenue - cogs - opex) };
+    });
+    new Chart(document.getElementById('revenueNetTrend'), {
+      type: 'line',
+      data: {
+        labels: netIncomeTrend.map(t => t.month),
+        datasets: [
+          { label: 'Revenue', data: netIncomeTrend.map(t => t.revenue), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.08)', fill: true, tension: .4 },
+          { label: 'Net Income', data: netIncomeTrend.map(t => t.net), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.08)', fill: true, tension: .4 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 2a. Refund Reasons Pie
+  if(refundReasons.length) {
+    var colors = ['#ef4444','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+    new Chart(document.getElementById('refundReasonsPie'), {
+      type: 'doughnut',
+      data: {
+        labels: refundReasons.map(r => r.reason),
+        datasets: [{ data: refundReasons.map(r => r.count), backgroundColor: colors.slice(0, refundReasons.length), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: { responsive: true, cutout: '50%', plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+    });
+  }
+
+  // 2b. Refund Trend
+  if(refundTrend.length) {
+    new Chart(document.getElementById('refundTrendLine'), {
+      type: 'line',
+      data: {
+        labels: refundTrend.map(r => r.month),
+        datasets: [
+          { label: 'Refunds', data: refundTrend.map(r => r.count), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.08)', fill: true, tension: .4, yAxisID: 'y' },
+          { label: 'Value', data: refundTrend.map(r => r.value), borderColor: '#f59e0b', borderDash: [5,5], tension: .4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Count' } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => '\u09F3' + v.toLocaleString() } }
+        }
+      }
+    });
+  }
+
+  // 2c. Discounts by Category
+  if(discountByCat.length) {
+    new Chart(document.getElementById('discountCategoryBar'), {
+      type: 'bar',
+      data: {
+        labels: discountByCat.map(d => d.category),
+        datasets: [{ label: 'Discount Value', data: discountByCat.map(d => d.value), backgroundColor: '#f59e0b', borderRadius: 6 }]
+      },
+      options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 2d. Refund Rate vs Discount Rate
+  var refundRate = {{ refund_rate }};
+  var discountRate = {{ discount_rate }};
+  new Chart(document.getElementById('refundDiscountCompare'), {
+    type: 'bar',
+    data: {
+      labels: ['Refund Rate', 'Discount Rate'],
+      datasets: [{
+        label: '% of Revenue',
+        data: [refundRate, discountRate],
+        backgroundColor: ['#ef4444', '#f59e0b'],
+        borderRadius: 6
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: Math.max(refundRate, discountRate) * 1.3, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // 3a. Cash Inflows vs Outflows
+  if(cashFlowTrend.length) {
+    new Chart(document.getElementById('cashFlowTrend'), {
+      type: 'bar',
+      data: {
+        labels: cashFlowTrend.map(cf => cf.month),
+        datasets: [
+          { label: 'Inflow', data: cashFlowTrend.map(cf => cf.inflow), backgroundColor: '#10b981', borderRadius: 4 },
+          { label: 'Outflow', data: cashFlowTrend.map(cf => cf.outflow), backgroundColor: '#ef4444', borderRadius: 4 },
+          { label: 'Net', data: cashFlowTrend.map(cf => cf.net), type: 'line', borderColor: '#4f46e5', backgroundColor: 'transparent', tension: .4, pointRadius: 4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, position: 'left', ticks: { callback: v => '\u09F3' + v.toLocaleString() } },
+          y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => '\u09F3' + v.toLocaleString() } }
+        }
+      }
+    });
+  }
+
+  // 3b. Balance Trend (Area)
+  if(cashFlowTrend.length) {
+    new Chart(document.getElementById('balanceTrend'), {
+      type: 'line',
+      data: {
+        labels: cashFlowTrend.map(cf => cf.month),
+        datasets: [{
+          label: 'Balance',
+          data: cashFlowTrend.map(cf => cf.balance),
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79,70,229,.12)',
+          fill: true, tension: .4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+
+  // 3c. Free Cash Flow
+  if(cashFlowTrend.length) {
+    new Chart(document.getElementById('freeCashFlowTrend'), {
+      type: 'bar',
+      data: {
+        labels: cashFlowTrend.map(cf => cf.month),
+        datasets: [{
+          label: 'Free Cash Flow',
+          data: cashFlowTrend.map(cf => cf.free_cf),
+          backgroundColor: cashFlowTrend.map(cf => cf.free_cf >= 0 ? '#10b981' : '#ef4444'),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '\u09F3' + v.toLocaleString() } } } }
+    });
+  }
+});
+
+function exportCSV() {
+  var table = document.getElementById('marginTable');
+  if (!table) return;
+  var rows = [];
+  for (var i = 0; i < table.rows.length; i++) {
+    var row = [], cols = table.rows[i].cells;
+    for (var j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+    rows.push(row.join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'finance_report.csv';
+  a.click();
+}
+</script>
+
+{% endblock %}

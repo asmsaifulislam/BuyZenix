@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}Order Confirmed | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:680px;text-align:center">
+    <div style="font-size:3.5rem;margin-bottom:1rem">✅</div>
+    <h1 style="font-size:clamp(1.5rem,4vw,2.25rem)">Thank you, {{ order.first_name }}!</h1>
+    <p style="color:var(--text-muted);max-width:420px;margin:0 auto">Your order <strong>#{{ order.id }}</strong> has been placed successfully. A confirmation email is on its way.</p>
+
+    <div class="summary" style="text-align:left;margin-top:1.5rem">
+      <div class="row"><span>Order</span><span>#{{ order.id }}</span></div>
+      <div class="row"><span>Email</span><span>{{ order.email }}</span></div>
+      <div class="row"><span>Status</span><span><span class="badge badge-pending">{{ order.get_status_display }}</span></span></div>
+      <div class="row"><span>Items</span><span>{{ order.items.count }}</span></div>
+      <div class="row total"><span>Total</span><span>{% money order.get_total_cost %}</span></div>
+    </div>
+
+    <div style="margin-top:1.5rem; display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap">
+      <a class="btn btn-primary" href="{% url 'core:product_list' %}">Continue shopping</a>
+      {% if user.is_authenticated %}
+        <a class="btn btn-outline" href="{% url 'accounts:order_history' %}">View my orders</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

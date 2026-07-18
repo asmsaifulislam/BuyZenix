@@ -1,0 +1,79 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Recommendations | BuyZenix Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin_custom.css' %}?v=5" />
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="/dashboard/">Dashboard</a> &rsaquo; Recommendations
+</div>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:16px;font-weight:700">Product Recommendations</h2>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:16px">
+  <h3 style="font-size:.9rem;font-weight:700;margin-bottom:12px">Add Recommendation</h3>
+  <form method="post" action="/dashboard/recommendations/create/" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+    {% csrf_token %}
+    <div>
+      <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px">Source Product</label>
+      <select name="source_product" required style="border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:.85rem">
+        <option value="">Select...</option>
+        {% for p in products %}
+        <option value="{{ p.id }}">{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px">Recommend</label>
+      <select name="recommended_product" required style="border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:.85rem">
+        <option value="">Select...</option>
+        {% for p in products %}
+        <option value="{{ p.id }}">{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px">Score</label>
+      <input type="number" name="score" value="0.5" step="0.1" min="0" max="1" style="border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:.85rem;width:80px">
+    </div>
+    <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer">Add</button>
+  </form>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+<table style="width:100%;border-collapse:collapse">
+  <thead>
+    <tr style="background:#111;color:#fff">
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">Source</th>
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">Recommends</th>
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">Score</th>
+      <th style="padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in recs %}
+    <tr style="border-bottom:1px solid #eee">
+      <td style="padding:10px 14px;font-weight:500">{{ r.source_product.name }}</td>
+      <td style="padding:10px 14px">{{ r.recommended_product.name }}</td>
+      <td style="padding:10px 14px">{{ r.score }}</td>
+      <td style="padding:10px 14px">
+        <form method="post" action="/dashboard/recommendations/{{ r.pk }}/delete/" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:.78rem;cursor:pointer">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="padding:24px;text-align:center;color:#9ca3af">No recommendations yet. Add one above.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

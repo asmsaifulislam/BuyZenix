@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}{{ product.name }} | BuyZenix{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="{{ product.description|truncatechars:160 }}" />
+<meta name="keywords" content="{{ product.name }}, {{ product.category.name }}, BuyZenix" />
+<meta property="og:title" content="{{ product.name }} | BuyZenix" />
+<meta property="og:description" content="{{ product.description|truncatechars:160 }}" />
+{% if product.image %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}" />
+{% endif %}
+<meta property="og:type" content="product" />
+<meta property="og:url" content="{{ request.build_absolute_uri }}" />
+<meta property="product:price:amount" content="{{ product.effective_price }}" />
+<meta property="product:price:currency" content="BDT" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{{ product.name }} | BuyZenix" />
+<meta name="twitter:description" content="{{ product.description|truncatechars:160 }}" />
+{% if product.image %}
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}" />
+{% endif %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "{{ product.name|escapejs }}",
+  "description": "{{ product.description|escapejs|truncatechars:300 }}",
+  "brand": {"@type": "Brand", "name": "BuyZenix"},
+  "offers": {
+    "@type": "Offer",
+    "price": "{{ product.price }}",
+    "priceCurrency": "BDT",
+    "availability": "{% if product.available %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
+    "url": "{{ request.build_absolute_uri }}"
+  }
+  {% if product.image %},"image": "{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}"{% endif %}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <a href="{% url 'core:product_list' %}" style="color:var(--text-muted);display:inline-flex;align-items:center;gap:.25rem;margin-bottom:1rem">← Back to shop</a>
+    <div class="pd-grid">
+      <div>
+        <div class="product-thumb" style="border-radius:var(--radius-lg);aspect-ratio:1/1">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="border-radius:var(--radius-lg)" />
+          {% else %}
+            <span class="ph" style="font-size:4rem">{{ product.name|first|upper }}</span>
+          {% endif %}
+        </div>
+        {% if gallery %}
+        <div style="display:flex;gap:.5rem;margin-top:.75rem;overflow-x:auto">
+          {% for img in gallery %}
+            {% if img.image %}
+            <img src="{{ img.image.url }}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid var(--border);flex-shrink:0;cursor:pointer" onclick="document.querySelector('.pd-grid .product-thumb img').src=this.src" />
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if product.video_url %}
+        <div style="margin-top:1rem;border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:16/9">
+          {% if "youtube" in product.video_url %}
+            {% with video_id=product.video_url|slice:"11:" %}
+            <iframe src="https://www.youtube.com/embed/{{ video_id }}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>
+            {% endwith %}
+          {% elif "vimeo" in product.video_url %}
+            <iframe src="https://player.vimeo.com/video/{{ product.video_url|slice:'18:' }}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>
+          {% else %}
+            <video controls style="width:100%;height:100%">
+              <source src="{{ product.video_url }}" />
+            </video>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if product.model_3d %}
+        <div style="margin-top:1rem">
+          <p style="font-size:.8rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">AR / 3D View</p>
+          <div style="border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:1/1;background:#f1f5f9">
+            <model-viewer
+              src="{{ product.model_3d.url }}"
+              alt="{{ product.name }} 3D model"
+              auto-rotate
+              camera-controls
+              shadow-intensity="1"
+              exposure="1"
+              style="width:100%;height:100%"
+            ></model-viewer>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="pd-info">
+        <span class="cat-label">{{ product.category.name }}</span>
+        <h1>{{ product.name }}</h1>
+        <div class="price">
+          {% if product.is_on_sale %}
+            <span style="text-decoration:line-through;color:#9ca3af;font-size:.9em;margin-right:.5rem">{% money product.price %}</span>
+            <span style="color:#dc2626">{% money product.sale_price %}</span>
+            <span style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:700;margin-left:.5rem">SALE</span>
+          {% else %}
+            {% money product.price %}
+          {% endif %}
+        </div>
+
+        <p style="color:var(--text-muted)">
+          {% if product.available %}
+            <span class="badge badge-success">In stock ({{ product.stock }})</span>
+          {% else %}
+            <span class="badge badge-danger">Out of stock</span>
+          {% endif %}
+        </p>
+        {% if product.supplier %}
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:.25rem">Sold by: <strong>{{ product.supplier.username }}</strong></p>
+        {% endif %}
+
+        {% if product.description %}
+        <div class="pd-specs-section">
+          <table class="pd-specs-table">
+            {% for line in spec_lines %}
+            <tr>
+              <td class="pd-specs-key">{{ line.key }}</td>
+              <td class="pd-specs-val">{{ line.value }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+        {% endif %}
+
+        {% if warranty_info %}
+        <div class="pd-warranty-box">
+          <div class="pd-warranty-icon">🛡️</div>
+          <div>
+            <strong>Warranty</strong>
+            <p style="margin:0;font-size:.9rem;color:var(--text)">{{ warranty_info }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <form class="pd-add-form" action="{% url 'cart:cart_add' product.id %}" method="post">
+          {% csrf_token %}
+          <input type="number" name="quantity" value="1" min="1" max="{{ product.stock|default:10 }}" />
+          <button class="btn btn-primary btn-block" type="submit" {% if not product.available %}disabled{% endif %}>
+            {% if product.available %}Add to cart{% else %}Unavailable{% endif %}
+          </button>
+        </form>
+
+        <form class="pd-add-form" action="{% url 'orders:buy_now' product.id %}" method="post" style="margin-top:.5rem">
+          {% csrf_token %}
+          <input type="hidden" name="quantity" value="1" />
+          <button class="btn btn-block pd-buy-now-btn" type="submit" {% if not product.available %}disabled{% endif %}>
+            {% if product.available %}⚡ Buy Now{% else %}Unavailable{% endif %}
+          </button>
+        </form>
+
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <p style="font-size:.8rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">Share this product</p>
+          <div style="display:flex;gap:.5rem;margin-bottom:.65rem">
+            <input type="text" id="shareUrl" value="{{ request.build_absolute_uri }}" readonly
+              style="flex:1;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text);background:#f8fafc;font-family:monospace" />
+            <button type="button" onclick="copyShareUrl()" id="copyBtn"
+              style="padding:.5rem 1rem;border:none;border-radius:8px;background:var(--primary);color:#fff;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .15s">
+              📋 Copy
+            </button>
+            <a href="{% url 'core:product_share' product.pk %}" class="btn btn-sm btn-outline" style="padding:.5rem .75rem;font-size:.82rem;text-decoration:none">🔗 Share</a>
+          </div>
+          <div id="copyMsg" style="display:none;font-size:.78rem;color:var(--green);font-weight:600;margin-bottom:.5rem">✓ Link copied!</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#1877f2;color:#fff;border-radius:8px">Facebook</a>
+            <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ product.name }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#1da1f2;color:#fff;border-radius:8px">Twitter</a>
+            <a href="https://wa.me/?text={{ product.name }}%20{{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#25d366;color:#fff;border-radius:8px">WhatsApp</a>
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener" class="btn btn-sm" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border-radius:8px">Instagram</a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#0A66C2;color:#fff;border-radius:8px">LinkedIn</a>
+          </div>
+        </div>
+
+        {% if related %}
+        <div class="pd-related">
+          <hr class="sep" />
+          <h4>Related products</h4>
+          <div class="product-grid" style="grid-template-columns:repeat(2,1fr)">
+            {% for p in related %}
+              {% include "core/_product_card.html" %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<script>
+function copyShareUrl() {
+  var inp = document.getElementById('shareUrl');
+  var msg = document.getElementById('copyMsg');
+  var btn = document.getElementById('copyBtn');
+  inp.select();
+  inp.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(inp.value).then(function() {
+    btn.textContent = '✓ Copied!';
+    btn.style.background = '#16a34a';
+    msg.style.display = 'block';
+    setTimeout(function() {
+      btn.textContent = '📋 Copy';
+      btn.style.background = '';
+      msg.style.display = 'none';
+    }, 2000);
+  }).catch(function() {
+    document.execCommand('copy');
+    btn.textContent = '✓ Copied!';
+    btn.style.background = '#16a34a';
+    msg.style.display = 'block';
+    setTimeout(function() {
+      btn.textContent = '📋 Copy';
+      btn.style.background = '';
+      msg.style.display = 'none';
+    }, 2000);
+  });
+}
+</script>
+{% endblock %}

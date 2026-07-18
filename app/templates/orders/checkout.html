@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}Checkout | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Checkout</h2>
+    </div>
+    <div class="checkout-layout">
+      <div class="form-card">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="form-grid">
+            {% for field in form %}
+              <div class="field full">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                  <span class="error">{{ error }}</span>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" style="margin-top:1.25rem">Place order</button>
+        </form>
+      </div>
+
+      <div>
+        <div class="summary">
+          <h3>Your order</h3>
+          {% for item in cart %}
+            <div class="row">
+              <span>{{ item.product.name }} × {{ item.quantity }}</span>
+              <span>{% money item.total_price %}</span>
+            </div>
+          {% endfor %}
+          <div class="row total"><span>Total</span><span>{% money cart.get_total_price %}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% if gdpr_consent_required %}
+<div id="cookieConsent" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1e1b4b;color:#fff;padding:1.25rem 1.5rem;box-shadow:0 -4px 20px rgba(0,0,0,.2);animation:slideUp .4s ease">
+  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+    <div style="flex:1;min-width:250px">
+      <p style="margin:0 0 .5rem;font-weight:700;font-size:1rem">🍪 We value your privacy</p>
+      <p style="margin:0;font-size:.85rem;opacity:.85;line-height:1.5">We use cookies to improve your experience, analyze traffic, and serve personalized content. You can customize your preferences below.</p>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+      <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;cursor:pointer">
+        <input type="checkbox" checked disabled style="accent-color:#6366f1" /> Necessary
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;cursor:pointer">
+        <input type="checkbox" id="consentAnalytics" checked style="accent-color:#6366f1" /> Analytics
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;cursor:pointer">
+        <input type="checkbox" id="consentMarketing" style="accent-color:#6366f1" /> Marketing
+      </label>
+      <button onclick="saveCookieConsent()" style="padding:.5rem 1.25rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .15s" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">Accept Selected</button>
+      <button onclick="acceptAllCookies()" style="padding:.5rem 1.25rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .15s" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">Accept All</button>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+</style>
+<script>
+(function(){
+  var consent = document.cookie.split(';').find(function(c){ return c.trim().indexOf('gdpr_consent=') === 0; });
+  if (!consent) { document.getElementById('cookieConsent').style.display = 'block'; }
+
+  window.saveCookieConsent = function() {
+    var data = {
+      necessary: true,
+      analytics: document.getElementById('consentAnalytics').checked,
+      marketing: document.getElementById('consentMarketing').checked,
+      preferences: true
+    };
+    fetch('/api/cookie-consent/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken()},
+      body: JSON.stringify(data)
+    }).then(function(){
+      document.getElementById('cookieConsent').style.display = 'none';
+    });
+  };
+
+  window.acceptAllCookies = function() {
+    var data = { necessary: true, analytics: true, marketing: true, preferences: true };
+    fetch('/api/cookie-consent/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken()},
+      body: JSON.stringify(data)
+    }).then(function(){
+      document.getElementById('cookieConsent').style.display = 'none';
+    });
+  };
+
+  function getCsrfToken() {
+    var cookies = document.cookie.split(';');
+    for (var i = 0; i < cookies.length; i++) {
+      var c = cookies[i].trim();
+      if (c.indexOf('csrftoken=') === 0) return c.substring(10);
+    }
+    return '';
+  }
+})();
+</script>
+{% endif %}

@@ -1,0 +1,19 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Site Settings{% endblock %}
+{% block dash_heading %}Site Settings{% endblock %}
+{% block dash_content %}
+<div class="card" style="max-width:700px">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary" style="margin-top:1rem">Save Settings</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

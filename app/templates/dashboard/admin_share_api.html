@@ -1,0 +1,139 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}Share API | BuyZenix Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin_custom.css' %}?v=5" />
+<style>
+  .copy-btn { background:#2563eb;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:.78rem;cursor:pointer;transition:background .15s }
+  .copy-btn:hover { background:#1d4ed8 }
+  .copy-btn.copied { background:#16a34a }
+  .url-box { background:#f8f9fa;border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:.78rem;color:#374151;word-break:break-all;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px }
+  .url-box code { flex:1;user-select:all }
+  .platform-label { font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;min-width:80px }
+  .pf-facebook { color:#1877f2 }
+  .pf-twitter { color:#1da1f2 }
+  .pf-whatsapp { color:#25d366 }
+  .pf-linkedin { color:#0a66c2 }
+  .pf-telegram { color:#0088cc }
+  .pf-instagram { color:#e4405f }
+  .product-card { background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:16px;overflow:hidden }
+  .product-header { background:#111;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between }
+  .product-header h3 { margin:0;font-size:.9rem;font-weight:700 }
+  .product-body { padding:16px }
+  .urls-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+  @media(max-width:768px) { .urls-grid { grid-template-columns:1fr } }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="/dashboard/">Dashboard</a> &rsaquo; Share API
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+  <div>
+    <h2 style="margin:0;font-weight:700">Share API — All URLs</h2>
+    <p style="color:#6b7280;margin:4px 0 0;font-size:.85rem">{{ total }} products &bull; Copy any URL with one click</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button onclick="copyAll()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;font-size:.85rem">Copy All URLs</button>
+  </div>
+</div>
+
+{% for s in shares %}
+<div class="product-card">
+  <div class="product-header">
+    <h3>{{ s.product.name }}</h3>
+    <span style="color:#9ca3af;font-size:.78rem">ID: {{ s.product.id }} &bull; {% money s.product.price %}</span>
+  </div>
+  <div class="product-body">
+    <div class="urls-grid">
+      <div class="url-box">
+        <span class="platform-label pf-facebook">Facebook</span>
+        <code id="fb-{{ s.product.id }}">{{ s.facebook }}</code>
+        <button class="copy-btn" onclick="copyUrl('fb-{{ s.product.id }}', this)">Copy</button>
+      </div>
+      <div class="url-box">
+        <span class="platform-label pf-twitter">Twitter</span>
+        <code id="tw-{{ s.product.id }}">{{ s.twitter }}</code>
+        <button class="copy-btn" onclick="copyUrl('tw-{{ s.product.id }}', this)">Copy</button>
+      </div>
+      <div class="url-box">
+        <span class="platform-label pf-whatsapp">WhatsApp</span>
+        <code id="wa-{{ s.product.id }}">{{ s.whatsapp }}</code>
+        <button class="copy-btn" onclick="copyUrl('wa-{{ s.product.id }}', this)">Copy</button>
+      </div>
+      <div class="url-box">
+        <span class="platform-label pf-linkedin">LinkedIn</span>
+        <code id="li-{{ s.product.id }}">{{ s.linkedin }}</code>
+        <button class="copy-btn" onclick="copyUrl('li-{{ s.product.id }}', this)">Copy</button>
+      </div>
+      <div class="url-box">
+        <span class="platform-label pf-telegram">Telegram</span>
+        <code id="tg-{{ s.product.id }}">{{ s.telegram }}</code>
+        <button class="copy-btn" onclick="copyUrl('tg-{{ s.product.id }}', this)">Copy</button>
+      </div>
+      <div class="url-box">
+        <span class="platform-label" style="color:#000">TikTok</span>
+        <code id="tt-{{ s.product.id }}">{{ s.tiktok }}</code>
+        <button class="copy-btn" onclick="copyUrl('tt-{{ s.product.id }}', this)">Copy</button>
+      </div>
+      <div class="url-box">
+        <span class="platform-label" style="color:#e4405f">Instagram</span>
+        <code id="ig-{{ s.product.id }}">{{ s.instagram }}</code>
+        <button class="copy-btn" onclick="copyUrl('ig-{{ s.product.id }}', this)">Copy</button>
+      </div>
+      <div class="url-box">
+        <span class="platform-label" style="color:#111">Product Page</span>
+        <code id="pg-{{ s.product.id }}">{{ s.url }}</code>
+        <button class="copy-btn" onclick="copyUrl('pg-{{ s.product.id }}', this)">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% if not shares %}
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:40px;text-align:center;color:#9ca3af">
+  No products found
+</div>
+{% endif %}
+
+<div style="margin-top:16px;padding:16px;background:#fff;border:1px solid #e5e7eb;border-radius:12px">
+  <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">API Endpoints</h3>
+  <div style="font-size:.85rem;color:#374151;line-height:1.8">
+    <p><code>GET /api/share/&lt;product_id&gt;/</code> — Share URLs for one product (JSON)</p>
+    <p><code>GET /api/share-all/</code> — Share URLs for all products (JSON)</p>
+    <p><code>GET /api/recommendations/&lt;product_id&gt;/</code> — Product recommendations (JSON)</p>
+    <p><code>GET /api/loyalty/</code> — User loyalty points (requires login)</p>
+    <p><code>GET /api/sentiment/</code> — Order sentiment analysis</p>
+    <p><code>GET /api/forecast/</code> — Sales forecast & trending products</p>
+  </div>
+</div>
+
+<script>
+function copyUrl(id, btn) {
+  var text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+function copyAll() {
+  var urls = [];
+  document.querySelectorAll('.url-box code').forEach(function(el) {
+    urls.push(el.textContent);
+  });
+  navigator.clipboard.writeText(urls.join('\n')).then(function() {
+    alert('All URLs copied to clipboard!');
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}{{ action }} Product{% endblock %}
+{% block dash_heading %}{{ action }} Product{% endblock %}
+
+{% block dash_content %}
+<div style="max-width:750px">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-header"><h3>Product Details</h3></div>
+      <div class="card-body">
+        {% for field in form %}
+          {% if field.name == "image" or field.name == "clear_image" %}
+          {% else %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p style="font-size:.78rem;color:#9ca3af;margin-top:2px">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<span style="color:#dc2626;font-size:.8rem">{{ error }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-header"><h3>Main Image</h3></div>
+      <div class="card-body">
+        {% if product and product.image %}
+        <div style="display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
+          <div>
+            <img src="{{ product.image.url }}" style="max-height:140px;border-radius:10px;border:1px solid #e5e7eb;object-fit:cover" />
+          </div>
+          <div style="flex:1;min-width:200px">
+            <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.35rem">Replace</label>
+            {{ form.image }}
+            <div style="display:flex;align-items:center;gap:.5rem;margin-top:.75rem;padding:.6rem .8rem;background:#fef2f2;border-radius:8px;border:1px solid #fecaca">
+              {{ form.clear_image }}
+              <label for="{{ form.clear_image.id_for_label }}" style="margin:0;font-size:.85rem;font-weight:600;color:#dc2626;cursor:pointer">Delete current image</label>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.35rem">Upload image</label>
+        {{ form.image }}
+        {% endif %}
+      </div>
+    </div>
+
+    {% if product and product.pk %}
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-header"><h3>Gallery Images (Colors & Angles)</h3></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="form-group">
+            <label>Gallery Images</label>
+            <input type="file" name="gallery_images" multiple accept="image/*" class="form-input" />
+            <p style="font-size:.78rem;color:#9ca3af">Hold Ctrl/Cmd to select multiple</p>
+          </div>
+          <div></div>
+          <div class="form-group">
+            <label>Colors (comma-separated)</label>
+            <input type="text" name="gallery_colors" class="form-input" placeholder="red, blue, black" />
+          </div>
+          <div class="form-group">
+            <label>Angles (comma-separated)</label>
+            <input type="text" name="gallery_angles" class="form-input" placeholder="front, back, left" />
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label>Labels (comma-separated)</label>
+            <input type="text" name="gallery_labels" class="form-input" placeholder="Midnight Blue, Rose Gold" />
+          </div>
+        </div>
+
+        {% if gallery %}
+        <h4 style="font-size:.85rem;font-weight:700;margin-bottom:8px">Current Gallery</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem">
+          {% for img in gallery %}
+          <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;background:#f8f9fa">
+            {% if img.image %}
+            <img src="{{ img.image.url }}" style="width:100%;height:120px;object-fit:cover;display:block" />
+            {% endif %}
+            <div style="padding:6px 8px;font-size:.75rem">
+              {% if img.color %}<span style="color:#6b7280">{{ img.color }}</span>{% endif %}
+              {% if img.angle %}<span style="color:#6b7280"> / {{ img.angle }}</span>{% endif %}
+              {% if img.label %}<br><strong>{{ img.label }}</strong>{% endif %}
+            </div>
+            <form method="post" action="{% url 'dashboard:admin_product_gallery_delete' img.pk %}" style="position:absolute;top:6px;right:6px"
+                  onsubmit="return confirm('Delete?')">
+              {% csrf_token %}
+              <button type="submit" style="background:#dc2626;color:#fff;border:none;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:.8rem">X</button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="display:flex;gap:.5rem">
+      <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-weight:600;cursor:pointer">{{ action }} Product</button>
+      <a href="{% url 'dashboard:admin_products' %}" style="color:#6b7280;padding:9px 20px;font-weight:600;text-decoration:none">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

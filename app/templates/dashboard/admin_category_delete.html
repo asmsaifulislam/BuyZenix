@@ -1,0 +1,15 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}Delete Category{% endblock %}
+{% block dash_heading %}Delete Category{% endblock %}
+{% block dash_content %}
+<div class="card" style="max-width:500px">
+  <div class="card-body" style="text-align:center;padding:2rem">
+    <p style="margin-bottom:1.5rem">Delete <strong>{{ category.name }}</strong>? This will remove all {{ category.products.count }} products in this category.</p>
+    <form method="post" style="display:flex;gap:.5rem;justify-content:center">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <a href="{% url 'dashboard:admin_categories' %}" class="btn btn-outline">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

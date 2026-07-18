@@ -1,0 +1,39 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block dash_title %}API Add{% endblock %}
+{% block dash_heading %}API Add{% endblock %}
+{% block dash_actions %}
+<a href="{% url 'dashboard:admin_api_key_create' %}" class="btn btn-primary btn-sm">+ Add API Key</a>
+{% endblock %}
+
+{% block dash_content %}
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table>
+      <thead><tr><th>Name</th><th>Category</th><th>Key</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for k in keys %}
+        <tr>
+          <td><strong>{{ k.name }}</strong></td>
+          <td><span class="badge badge-purple">{{ k.get_category_display }}</span></td>
+          <td style="font-family:monospace;font-size:.8rem">{% if k.api_key %}{{ k.api_key|truncatechars:20 }}…{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+          <td>
+            <form method="post" action="{% url 'dashboard:admin_api_key_toggle' k.pk %}" style="display:inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm {% if k.is_active %}btn-success{% else %}btn-outline{% endif %}" style="min-width:70px">
+                {% if k.is_active %}Active{% else %}Off{% endif %}
+              </button>
+            </form>
+          </td>
+          <td>
+            <a href="{% url 'dashboard:admin_api_key_edit' k.pk %}" class="btn btn-sm btn-outline">Edit</a>
+            <a href="{% url 'dashboard:admin_api_key_delete' k.pk %}" class="btn btn-sm btn-danger" style="margin-left:.25rem">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No API keys configured. <a href="{% url 'dashboard:admin_api_key_create' %}">Add your first API key</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

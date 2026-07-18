@@ -1,0 +1,35 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load currency_tags %}
+{% block dash_title %}My Products{% endblock %}
+{% block dash_heading %}My Products{% endblock %}
+{% block dash_actions %}
+<a href="{% url 'dashboard:supplier_product_create' %}" class="btn btn-primary btn-sm">+ Add Product</a>
+{% endblock %}
+
+{% block dash_content %}
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table>
+      <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>{% if p.image %}<img src="{{ p.image.url }}" style="width:40px;height:40px;object-fit:cover;border-radius:8px" />{% else %}-{% endif %}</td>
+          <td><strong>{{ p.name }}</strong></td>
+          <td>{{ p.category.name }}</td>
+          <td>{% money p.price %}</td>
+          <td>{{ p.stock }}</td>
+          <td>{% if p.available %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-red">Inactive</span>{% endif %}</td>
+          <td>
+            <a href="{% url 'dashboard:supplier_product_edit' p.pk %}" class="btn btn-sm btn-outline">Edit</a>
+            <a href="{% url 'dashboard:supplier_product_delete' p.pk %}" class="btn btn-sm btn-danger" style="margin-left:.25rem">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">No products yet. <a href="{% url 'dashboard:supplier_product_create' %}">Add your first product</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

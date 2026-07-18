@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}Dashboard | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="dash-header">
+      <h2>Hi, {{ user.first_name|default:user.username }}</h2>
+      <div class="dash-actions">
+        <a class="btn btn-outline btn-sm" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
+        <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+          {% csrf_token %}<button class="btn btn-outline btn-sm" type="submit">Log out</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h3 style="margin:0">Recent orders</h3>
+      <a href="{% url 'accounts:order_history' %}">View all →</a>
+    </div>
+    {% if orders %}
+      {% for order in orders %}
+        <div class="cart-item">
+          <div></div>
+          <div>
+            <strong>Order #{{ order.id }}</strong>
+            <div style="color:var(--text-muted);font-size:.85rem">{{ order.created|date:"M d, Y" }} — {{ order.items.count }} item{{ order.items.count|pluralize }}</div>
+          </div>
+          <div>
+            <span class="badge badge-pending">{{ order.get_status_display }}</span>
+            <div style="font-weight:800;margin-top:.35rem">{% money order.get_total_cost %}</div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <p>You have no orders yet.</p>
+        <a class="btn btn-primary" href="{% url 'core:product_list' %}">Start shopping</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

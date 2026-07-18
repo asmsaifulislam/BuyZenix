@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}Your Cart | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Your Cart</h2>
+    </div>
+    {% if cart %}
+      <div class="two-col">
+        <div>
+          {% for item in cart %}
+          <div class="cart-item">
+            <div class="thumb">
+              {% if item.product.image %}
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" />
+              {% else %}
+                <span style="color:#2a3050;font-weight:900">{{ item.product.name|first|upper }}</span>
+              {% endif %}
+            </div>
+            <div>
+              <strong>{{ item.product.name }}</strong>
+              <div style="color:var(--text-muted);font-size:.85rem">{% money item.price %} × {{ item.quantity }}</div>
+              <div style="margin-top:.35rem">
+                <a class="btn btn-outline btn-sm" href="{% url 'core:product_detail' item.product.slug %}">View</a>
+              </div>
+            </div>
+            <div>
+              <div style="font-weight:800">{% money item.total_price %}</div>
+              <form action="{% url 'cart:cart_remove' item.product.id %}" method="post" style="margin-top:.5rem">
+                {% csrf_token %}
+                <button class="btn btn-outline btn-sm" type="submit">Remove</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+          <a class="btn btn-outline btn-sm" href="{% url 'cart:cart_clear' %}" style="margin-top:.5rem">Clear cart</a>
+        </div>
+
+        <div>
+          <div class="summary">
+            <h3>Order summary</h3>
+            <div class="row"><span>Items</span><span>{{ cart.get_total_quantity }}</span></div>
+            <div class="row"><span>Subtotal</span><span>{% money subtotal %}</span></div>
+
+            {% if coupon_code %}
+            <div class="row" style="color:var(--green)"><span>Coupon ({{ coupon_code }})</span><span>- {% money coupon_discount %}</span></div>
+            <form action="{% url 'cart:cart_remove_coupon' %}" method="post" style="margin-top:.25rem">
+              {% csrf_token %}
+              <button type="submit" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem;padding:0">Remove coupon</button>
+            </form>
+            {% else %}
+            <form action="{% url 'cart:cart_apply_coupon' %}" method="post" style="display:flex;gap:.5rem;margin-top:.5rem">
+              {% csrf_token %}
+              <input type="text" name="coupon_code" placeholder="Coupon code" style="flex:1;padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem" />
+              <button type="submit" class="btn btn-outline btn-sm">Apply</button>
+            </form>
+            {% endif %}
+
+            {% if coupon_error %}
+            <p style="color:var(--red);font-size:.8rem;margin-top:.5rem">{{ coupon_error }}</p>
+            {% endif %}
+
+            <div class="row"><span>Shipping</span><span>Free</span></div>
+            <div class="row total"><span>Total</span><span>{% money total %}</span></div>
+            <a class="btn btn-primary btn-block" href="{% url 'orders:checkout' %}" style="margin-top:1rem">Checkout</a>
+            <a class="btn btn-outline btn-block" href="{% url 'core:product_list' %}" style="margin-top:.65rem">Continue shopping</a>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>Your cart is empty</h3>
+        <p>Looks like you haven't added anything yet.</p>
+        <a class="btn btn-primary" href="{% url 'core:product_list' %}">Browse products</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

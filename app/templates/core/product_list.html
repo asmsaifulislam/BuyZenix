@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if category %}{{ category.name }} — {% endif %}Shop | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>{% if query %}SEARCH: "{{ query }}"{% elif category %}{{ category.name|title }}{% else %}ALL PRODUCTS{% endif %}</h2>
+      <span style="color:var(--text-muted)">{{ products|length }} item{{ products|length|pluralize }}</span>
+    </div>
+
+    <div class="filter-bar">
+      <a class="btn btn-sm {% if not category %}btn-primary{% else %}btn-outline{% endif %}" href="{% url 'core:product_list' %}">All</a>
+      {% for c in categories %}
+        <a class="btn btn-sm {% if category.id == c.id %}btn-primary{% else %}btn-outline{% endif %}" href="{{ c.get_absolute_url }}">{{ c.name }}</a>
+      {% endfor %}
+    </div>
+
+    {% if products %}
+      <div class="product-grid">
+        {% for product in products %}
+          {% include "core/_product_card.html" %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No products found</h3>
+        <p>Try a different search or category.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
