@@ -45,6 +45,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
+      - static_volume:/app/staticfiles
       - media_volume:/app/media
     expose:
       - "8000"
