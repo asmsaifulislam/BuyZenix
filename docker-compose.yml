@@ -29,7 +29,8 @@ services:
 
   web:
     build:
-      context: ./app
+      context: .
+      dockerfile: app/Dockerfile
     container_name: buyzenix_web
     restart: unless-stopped
     env_file:
@@ -50,7 +51,8 @@ services:
 
   celery:
     build:
-      context: ./app
+      context: .
+      dockerfile: app/Dockerfile
     container_name: buyzenix_celery
     restart: unless-stopped
     command: celery -A buyzenix worker -l info

@@ -12,7 +12,7 @@ RUN apt-get update \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
+COPY app/ /app/
 
 RUN mkdir -p /app/media /app/staticfiles \
     && chmod +x /app/entrypoint.sh
