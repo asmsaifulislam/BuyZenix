@@ -39,6 +39,26 @@ install_docker() {
   systemctl enable --now docker
 }
 
+prepare_kernel_networking() {
+  modprobe overlay >/dev/null 2>&1 || true
+  modprobe br_netfilter >/dev/null 2>&1 || true
+  modprobe nf_conntrack >/dev/null 2>&1 || true
+  modprobe nf_nat >/dev/null 2>&1 || true
+  modprobe iptable_nat >/dev/null 2>&1 || true
+  modprobe xt_addrtype >/dev/null 2>&1 || true
+
+  cat >/etc/sysctl.d/99-buyzenix-docker.conf <<EOF
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+  sysctl --system >/dev/null 2>&1 || true
+
+  systemctl enable --now containerd >/dev/null 2>&1 || true
+  systemctl reset-failed docker >/dev/null 2>&1 || true
+  systemctl restart docker >/dev/null 2>&1 || true
+}
+
 open_firewall() {
   if command -v firewall-cmd >/dev/null 2>&1; then
     systemctl enable --now firewalld >/dev/null 2>&1 || true
@@ -100,6 +120,7 @@ deploy_stack() {
 
 install_packages
 install_docker
+prepare_kernel_networking
 open_firewall
 prepare_hostname
 sync_repo
