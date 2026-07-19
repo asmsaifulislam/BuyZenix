@@ -103,18 +103,18 @@
 <div class="demand-grid-2col">
   <div class="card">
     <div class="card-header">BD Export vs Import Demand Trend (Monthly)</div>
-    <div class="card-body"><canvas id="bdDemandTrend" height="300"></canvas></div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="bdDemandTrend"></canvas></div></div>
   </div>
   <div class="card">
     <div class="card-header">VAT & Duty Impact on Pricing</div>
-    <div class="card-body"><canvas id="vatImpactBar" height="300"></canvas></div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="vatImpactBar"></canvas></div></div>
   </div>
 </div>
 
 <div class="demand-grid-2fr1fr">
   <div class="card">
     <div class="card-header">BD Trade Value Breakdown</div>
-    <div class="card-body"><canvas id="bdTradePie" height="260"></canvas></div>
+    <div class="card-body"><div class="chart-wrap chart-wrap-pie"><canvas id="bdTradePie"></canvas></div></div>
   </div>
   <div class="card">
     <div class="card-header">Price Comparison</div>
@@ -187,17 +187,17 @@
 <div class="demand-grid-2col">
   <div class="card">
     <div class="card-header">Global Demand Trend (2020–2024)</div>
-    <div class="card-body"><canvas id="globalDemandTrend" height="280"></canvas></div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="globalDemandTrend"></canvas></div></div>
   </div>
   <div class="card">
     <div class="card-header">Country-wise Price per {{ unit|title }}</div>
-    <div class="card-body"><canvas id="priceByCountryBar" height="280"></canvas></div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="priceByCountryBar"></canvas></div></div>
   </div>
 </div>
 
 <div class="card card-mb-2">
   <div class="card-header">Country-wise Demand Growth (YoY %)</div>
-  <div class="card-body"><canvas id="countryGrowthBar" height="240"></canvas></div>
+  <div class="card-body"><div class="chart-wrap"><canvas id="countryGrowthBar"></canvas></div></div>
 </div>
 
 <!-- SECTION 3: CONSUMER INTEREST -->
@@ -206,11 +206,11 @@
 <div class="demand-grid-3col">
   <div class="card">
     <div class="card-header">Search Interest by Region</div>
-    <div class="card-body"><canvas id="trendRegionBar" height="300"></canvas></div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="trendRegionBar"></canvas></div></div>
   </div>
   <div class="card">
     <div class="card-header">Search Trend Over Time</div>
-    <div class="card-body"><canvas id="trendTimeLine" height="300"></canvas></div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="trendTimeLine"></canvas></div></div>
   </div>
   <div class="card">
     <div class="card-header">Related Search Queries</div>
@@ -282,7 +282,7 @@
 <div class="demand-grid-2col">
   <div class="card">
     <div class="card-header">Demand Index vs Search Interest (Overlay)</div>
-    <div class="card-body"><canvas id="overlayScatter" height="300"></canvas></div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="overlayScatter"></canvas></div></div>
   </div>
   <div class="card">
     <div class="card-header">Synergy Analysis</div>
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function(){
           { label: 'Net', data: bdTrend.map(d => d.net), borderColor: '#4f46e5', borderDash: [5,5], tension: .4 }
         ]
       },
-      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
     });
   }
 
@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function(){
           borderRadius: 6
         }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
     });
   }
 
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function(){
         borderWidth: 2, borderColor: '#fff'
       }]
     },
-    options: { responsive: true, cutout: '50%', plugins: { legend: { position: 'bottom' } } }
+    options: { responsive: true, maintainAspectRatio: false, cutout: '50%', plugins: { legend: { position: 'bottom' } } }
   });
 
   if(globalTrend.length) {
@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function(){
         ]
       },
       options: {
-        responsive: true, interaction: { mode: 'index', intersect: false },
+        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: { legend: { position: 'top' } },
         scales: {
           y: { beginAtZero: true, position: 'left', ticks: { callback: v => '$' + v.toLocaleString() } },
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function(){
           borderRadius: 6
         }]
       },
-      options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + v } } } }
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + v } } } }
     });
   }
 
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function(){
           borderRadius: 6
         }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
     });
   }
 
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function(){
           borderRadius: 6
         }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
     });
   }
 
@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function(){
           fill: true, tension: .4
         }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
     });
   }
 
@@ -514,6 +514,7 @@ document.addEventListener('DOMContentLoaded', function(){
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {

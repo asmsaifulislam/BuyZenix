@@ -37,10 +37,15 @@
 /* --- Card header / body --- */
 .card-header { font-size: 1rem; padding: 1rem 1.25rem; }
 .card-body { padding: 1.25rem; }
+.card-body canvas { max-width: 100%; }
 .card-body-compact { padding: 1rem; }
 .card-body-wide { padding: 1.5rem; }
 .card-body-removable-padding { padding: 0; }
 .card-mb-2 { margin-bottom: 2rem; }
+
+/* --- Chart containers (fixed height) --- */
+.chart-wrap { position: relative; width: 100%; height: 300px; }
+.chart-wrap-pie { height: 260px; }
 
 /* --- Tables --- */
 .demand-report-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
@@ -148,7 +153,9 @@
   .demand-grid-2fr1fr,
   .demand-grid-3col,
   .demand-grid-insights { grid-template-columns: 1fr; }
-  #demandMap { height: 300px; }
+  .chart-wrap { height: 220px; }
+  .chart-wrap-pie { height: 200px; }
+  #demandMap { height: 250px; }
 }
 
 @media (max-width: 400px) {
