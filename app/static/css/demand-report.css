@@ -80,6 +80,8 @@
 
 /* --- Map --- */
 #demandMap { height: 420px; width: 100%; }
+.card-map { overflow: visible !important; }
+.card-map .card-body { padding: 0; overflow: visible !important; }
 
 /* --- Price comparison --- */
 .price-block { text-align: center; margin-bottom: 20px; padding: 0 0.5rem; }
