@@ -34,40 +34,42 @@
 <!-- FILTER BAR -->
 <div class="card" style="margin-bottom:1.5rem">
   <div class="card-body" style="padding:1rem 1.25rem">
-    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
-      <div style="flex:1;min-width:160px">
-        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Product Category</label>
-        <select name="category" class="form-input" style="padding:.5rem .75rem">
-          {% for p in all_products %}
-          <option value="{{ p }}" {% if f_category == p %}selected{% endif %}>{{ p }}</option>
-          {% endfor %}
-        </select>
+    <form method="get" id="filterForm">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px">
+        <div style="flex:1 1 200px">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Product Category</label>
+          <select name="category" class="form-input" style="padding:.5rem .75rem">
+            {% for p in all_products %}
+            <option value="{{ p }}" {% if f_category == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="flex:1 1 160px">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">HS Code</label>
+          <input type="text" name="hs_code" value="{{ f_hs }}" placeholder="{{ hs_code }}" class="form-input" style="padding:.5rem .75rem">
+        </div>
       </div>
-      <div style="flex:1;min-width:150px">
-        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">HS Code</label>
-        <input type="text" name="hs_code" value="{{ f_hs }}" placeholder="{{ hs_code }}" class="form-input" style="padding:.5rem .75rem">
-      </div>
-      <div style="flex:1;min-width:140px">
-        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Country</label>
-        <input type="text" name="country" value="{{ f_country }}" placeholder="All" class="form-input" style="padding:.5rem .75rem">
-      </div>
-      <div style="flex:1;min-width:130px">
-        <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Year</label>
-        <select name="year" class="form-input" style="padding:.5rem .75rem">
-          <option value="2024" {% if f_year == "2024" %}selected{% endif %}>2024</option>
-          <option value="2023" {% if f_year == "2023" %}selected{% endif %}>2023</option>
-          <option value="2022" {% if f_year == "2022" %}selected{% endif %}>2022</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
-        <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div style="flex:1 1 160px">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Country</label>
+          <input type="text" name="country" value="{{ f_country }}" placeholder="All" class="form-input" style="padding:.5rem .75rem">
+        </div>
+        <div style="flex:1 1 130px">
+          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Year</label>
+          <select name="year" class="form-input" style="padding:.5rem .75rem">
+            <option value="2024" {% if f_year == "2024" %}selected{% endif %}>2024</option>
+            <option value="2023" {% if f_year == "2023" %}selected{% endif %}>2023</option>
+            <option value="2022" {% if f_year == "2022" %}selected{% endif %}>2022</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
+          <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
+          <button type="button" onclick="exportCSV()" class="btn btn-outline btn-sm" style="padding:.5rem 1rem">Export CSV</button>
+          <button type="button" onclick="window.print()" class="btn btn-outline btn-sm" style="padding:.5rem 1rem">Print</button>
+        </div>
       </div>
     </form>
-    <div style="display:flex;gap:6px;margin-top:10px">
-      <button onclick="exportCSV()" class="btn btn-sm btn-outline" style="font-size:.8rem">Export CSV</button>
-      <button onclick="window.print()" class="btn btn-sm btn-outline" style="font-size:.8rem">Print</button>
-    </div>
   </div>
 </div>
 
