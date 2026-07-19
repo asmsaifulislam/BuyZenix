@@ -357,6 +357,83 @@
   </div>
 </div>
 
+<!-- SECTION 5: TOP BD EXPORTS & COUNTRY IMPORTS -->
+<h2 class="demand-section-title">5. Top 10 BD Exports & Country Import Products</h2>
+
+<div class="demand-grid-2col">
+  <div class="card">
+    <div class="card-header">Top 10 BD Exports — {{ selected_category }}</div>
+    <div class="card-body table-overflow">
+      <table class="demand-report-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th class="align-r">HS Code</th>
+            <th class="align-r">Value ($M)</th>
+            <th class="align-r">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in bd_top_exports %}
+          <tr>
+            <td class="rank">{{ p.rank }}</td>
+            <td class="bold">{{ p.product }}</td>
+            <td class="align-r">{{ p.hs_code }}</td>
+            <td class="align-r">${{ p.value }}</td>
+            <td class="align-r">
+              <div class="share-bar">
+                <span>{{ p.share }}%</span>
+                <div class="share-bar-bg">
+                  <div class="share-bar-fill" style="background:var(--green);width:{{ p.share }}%"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">Country Import Products — Top 5 Importers</div>
+    <div class="card-body table-overflow">
+      {% for country, products in country_import_products.items %}
+      <div style="margin-bottom:1rem;{% if not forloop.last %}padding-bottom:1rem;border-bottom:1px solid #e2e8f0{% endif %}">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:8px;color:var(--blue)">{{ country }}</div>
+        <table class="demand-report-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th class="align-r">HS</th>
+              <th class="align-r">$M</th>
+              <th class="align-r">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in products %}
+            <tr>
+              <td>{{ p.product }}</td>
+              <td class="align-r">{{ p.hs_code }}</td>
+              <td class="align-r">${{ p.value }}</td>
+              <td class="align-r">
+                <div class="share-bar">
+                  <span>{{ p.share }}%</span>
+                  <div class="share-bar-bg">
+                    <div class="share-bar-fill" style="background:var(--blue);width:{{ p.share }}%"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
