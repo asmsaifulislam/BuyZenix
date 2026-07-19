@@ -3,9 +3,6 @@
    Page-specific styles — fully self-contained
    ============================================ */
 
-/* --- Width constraint: 40% of available space --- */
-.demand-report-wrap { max-width: 40%; margin: 0 auto; }
-
 /* --- Filter card --- */
 .demand-filter-card { margin-bottom: 1.5rem; }
 .demand-filter-card .card-body { padding: 1rem 1.25rem; }
@@ -137,7 +134,6 @@
 }
 
 @media (max-width: 600px) {
-  .demand-report-wrap { max-width: 100%; }
   .demand-stats { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .stat-card .value { font-size: 1.2rem; }
   .demand-section-title { font-size: 0.95rem; }
