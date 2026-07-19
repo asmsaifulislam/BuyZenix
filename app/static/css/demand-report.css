@@ -22,8 +22,11 @@
 .demand-filter-card { margin-bottom: 1.5rem; }
 .demand-filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .demand-filter-row + .demand-filter-row { margin-top: 10px; }
-.demand-filter-field { flex: 1 1 180px; }
 .demand-filter-field label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+.demand-filter-field-cat { width: 280px; }
+.demand-filter-field-hs { width: 200px; }
+.demand-filter-field-country { width: 200px; }
+.demand-filter-field-year { width: 130px; }
 .demand-filter-actions { display: flex; gap: 6px; align-items: flex-end; flex-shrink: 0; }
 
 /* Grid layouts */
@@ -44,7 +47,10 @@
   .demand-grid-2col,
   .demand-grid-2fr1fr,
   .demand-grid-3col { grid-template-columns: 1fr !important; }
-  .demand-filter-field { flex: 1 1 100%; min-width: 0; }
+  .demand-filter-field-cat,
+  .demand-filter-field-hs,
+  .demand-filter-field-country,
+  .demand-filter-field-year { width: 100%; }
 }
 @media (max-width: 480px) {
   .demand-stats { grid-template-columns: 1fr !important; }
