@@ -63,6 +63,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "cart.context_processors.cart_counts",
                 "core.context_processors.currency_context",
+                "core.context_processors.nav_categories",
                 "dashboard.analytics_context.analytics_context",
             ],
         },

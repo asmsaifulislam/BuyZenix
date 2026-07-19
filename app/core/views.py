@@ -57,6 +57,19 @@ def product_list(request, category_slug=None):
             Q(name__icontains=query) | Q(description__icontains=query)
         )
 
+    sort_price = request.GET.get("sort_price")
+    sort_date = request.GET.get("sort_date")
+
+    if sort_price == "low_to_high":
+        products = products.order_by("price")
+    elif sort_price == "high_to_low":
+        products = products.order_by("-price")
+
+    if sort_date == "newest":
+        products = products.order_by("-created")
+    elif sort_date == "oldest":
+        products = products.order_by("created")
+
     return render(
         request,
         "core/product_list.html",
@@ -65,6 +78,8 @@ def product_list(request, category_slug=None):
             "categories": categories,
             "products": products,
             "query": query,
+            "sort_price": sort_price,
+            "sort_date": sort_date,
         },
     )
 

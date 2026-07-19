@@ -10,3 +10,8 @@ def currency_context(request):
         "currency_code": code,
         "currencies": currencies,
     }
+
+
+def nav_categories(request):
+    from core.models import Category
+    return {"nav_categories": Category.objects.all()[:20]}

@@ -25,6 +25,24 @@
         <a href="{% url 'core:product_list' %}">Shop</a>
         <a href="{% url 'core:home' %}#featured">Featured</a>
         <a href="{% url 'core:home' %}#categories">Categories</a>
+        <select onchange="if(this.value) window.location='{% url "core:product_list" %}?sort_price='+this.value" style="padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.15);background:#fff;color:#333;font-size:.78rem;font-weight:500;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg fill=\"%23333\" height=\"16\" viewBox=\"0 0 24 24\" width=\"16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>');background-repeat:no-repeat;background-position:right 6px center;background-size:12px;padding-right:22px">
+          <option value="">Price</option>
+          <option value="low_to_high">Low → High</option>
+          <option value="high_to_low">High → Low</option>
+        </select>
+        <select onchange="if(this.value) window.location='{% url "core:product_list" %}?sort_date='+this.value" style="padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.15);background:#fff;color:#333;font-size:.78rem;font-weight:500;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg fill=\"%23333\" height=\"16\" viewBox=\"0 0 24 24\" width=\"16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>');background-repeat:no-repeat;background-position:right 6px center;background-size:12px;padding-right:22px">
+          <option value="">Sort</option>
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+        </select>
+        {% if nav_categories %}
+        <select onchange="if(this.value) window.location=this.value" style="padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.15);background:#fff;color:#333;font-size:.78rem;font-weight:500;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg fill=\"%23333\" height=\"16\" viewBox=\"0 0 24 24\" width=\"16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>');background-repeat:no-repeat;background-position:right 6px center;background-size:12px;padding-right:22px">
+          <option value="">Category</option>
+          {% for c in nav_categories %}
+            <option value="{{ c.get_absolute_url }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
       </nav>
 
       <div class="header-actions">
