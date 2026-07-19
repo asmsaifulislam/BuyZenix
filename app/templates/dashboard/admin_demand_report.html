@@ -9,7 +9,6 @@
 {% endblock %}
 
 {% block dash_content %}
-<div style="overflow-x:hidden;max-width:100%">
 
 <style>
   @media print {
@@ -19,36 +18,24 @@
     #demandMap { display:none !important; }
     body { background:#fff; }
   }
-  .demand-section-title {
-    font-size:1.1rem; font-weight:700; margin:2rem 0 1rem; color:var(--text);
-    padding-bottom:6px; border-bottom:2px solid #e2e8f0;
-  }
   .synergy-badge { display:inline-block; padding:2px 10px; border-radius:10px; font-size:.72rem; font-weight:600; }
   .synergy-high { background:#dcfce7; color:#166534; }
   .synergy-medium { background:#ffedd5; color:#9a3412; }
   .synergy-low { background:#fee2e2; color:#991b1b; }
   .score-bar { display:inline-block; height:8px; border-radius:4px; vertical-align:middle; margin-left:6px; }
-  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
-  .grid-2col { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:2rem; }
-  .grid-2fr-1fr { display:grid; grid-template-columns:2fr 1fr; gap:1.25rem; margin-bottom:2rem; }
-  .demand-filter-form { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
-  .demand-filter-form > div { flex:1 1 140px; min-width:140px; }
-  .demand-filter-actions { display:flex; gap:6px; align-items:flex-end; flex-shrink:0; }
   @media (max-width:900px) {
     .stats { grid-template-columns:repeat(2,1fr) !important; }
-    .grid-2col, .grid-2fr-1fr { grid-template-columns:1fr !important; }
-    .grid-3col { grid-template-columns:1fr !important; }
   }
   @media (max-width:480px) {
     .stats { grid-template-columns:1fr !important; }
   }
 </style>
 
-<!-- ═══ FILTER BAR ═══ -->
+<!-- FILTER BAR -->
 <div class="card" style="margin-bottom:1.5rem">
   <div class="card-body" style="padding:1rem 1.25rem">
-    <form method="get" id="filterForm" class="demand-filter-form">
-      <div>
+    <form method="get" id="filterForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:160px">
         <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Product Category</label>
         <select name="category" class="form-input" style="padding:.5rem .75rem">
           {% for p in all_products %}
@@ -56,15 +43,15 @@
           {% endfor %}
         </select>
       </div>
-      <div>
+      <div style="flex:1;min-width:150px">
         <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">HS Code</label>
         <input type="text" name="hs_code" value="{{ f_hs }}" placeholder="{{ hs_code }}" class="form-input" style="padding:.5rem .75rem">
       </div>
-      <div>
+      <div style="flex:1;min-width:140px">
         <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Country</label>
         <input type="text" name="country" value="{{ f_country }}" placeholder="All" class="form-input" style="padding:.5rem .75rem">
       </div>
-      <div>
+      <div style="flex:1;min-width:130px">
         <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Year</label>
         <select name="year" class="form-input" style="padding:.5rem .75rem">
           <option value="2024" {% if f_year == "2024" %}selected{% endif %}>2024</option>
@@ -72,7 +59,7 @@
           <option value="2022" {% if f_year == "2022" %}selected{% endif %}>2022</option>
         </select>
       </div>
-      <div class="demand-filter-actions">
+      <div style="display:flex;gap:6px">
         <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
         <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
       </div>
@@ -84,12 +71,8 @@
   </div>
 </div>
 
-<!-- ═══ EXECUTIVE SUMMARY ═══ -->
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
-  <h2 style="font-size:1.1rem;font-weight:700;color:var(--text);margin:0">Executive Summary</h2>
-  <span style="background:#4f46e5;color:#fff;padding:3px 12px;border-radius:12px;font-size:.8rem;font-weight:600">{{ selected_category }} (HS {{ hs_code }})</span>
-  <span style="color:var(--muted);font-size:.8rem">{{ hs_name }} / {{ unit }}</span>
-</div>
+<!-- EXECUTIVE SUMMARY -->
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Executive Summary</h2>
 <div class="stats">
   <div class="stat-card">
     <div class="label">BD Exports</div>
@@ -133,12 +116,10 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
 <!-- SECTION 1: NATIONAL (BANGLADESH) DEMAND & PRICING -->
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
-<div class="demand-section-title">1. National (Bangladesh) Demand & Pricing</div>
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">1. National (Bangladesh) Demand & Pricing</h2>
 
-<div class="grid-2col">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
   <div class="card">
     <div class="card-header">BD Export vs Import Demand Trend (Monthly)</div>
     <div class="card-body"><canvas id="bdDemandTrend" height="300"></canvas></div>
@@ -149,7 +130,7 @@
   </div>
 </div>
 
-<div class="grid-2fr-1fr">
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
   <div class="card">
     <div class="card-header">BD Trade Value Breakdown</div>
     <div class="card-body"><canvas id="bdTradePie" height="260"></canvas></div>
@@ -176,12 +157,10 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
 <!-- SECTION 2: INTERNATIONAL DEMAND & PRICING -->
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
-<div class="demand-section-title">2. International Demand & Pricing</div>
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">2. International Demand & Pricing</h2>
 
-<div class="grid-2fr-1fr">
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
   <div class="card">
     <div class="card-header">Top Importing Countries — Demand & Price per {{ unit|title }}</div>
     <div class="card-body" style="overflow-x:auto">
@@ -219,12 +198,12 @@
   <div class="card">
     <div class="card-header">Global Demand Map</div>
     <div class="card-body" style="padding:0">
-      <div id="demandMap" class="map-container" style="height:420px;width:100%;position:relative;z-index:0"></div>
+      <div id="demandMap" style="height:420px;width:100%"></div>
     </div>
   </div>
 </div>
 
-<div class="grid-2col">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
   <div class="card">
     <div class="card-header">Global Demand Trend (2020–2024)</div>
     <div class="card-body"><canvas id="globalDemandTrend" height="280"></canvas></div>
@@ -240,12 +219,10 @@
   <div class="card-body"><canvas id="countryGrowthBar" height="240"></canvas></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
 <!-- SECTION 3: CONSUMER INTEREST (GOOGLE TRENDS) -->
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
-<div class="demand-section-title">3. Consumer Interest (Search Trends)</div>
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">3. Consumer Interest (Search Trends)</h2>
 
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2rem">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:2rem">
   <div class="card">
     <div class="card-header">Search Interest by Region</div>
     <div class="card-body"><canvas id="trendRegionBar" height="300"></canvas></div>
@@ -275,12 +252,9 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
 <!-- SECTION 4: COMBINED INSIGHTS -->
-<!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════ -->
-<div class="demand-section-title">4. Combined Insights — Trade + Trends + Pricing</div>
+<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">4. Combined Insights — Trade + Trends + Pricing</h2>
 
-<!-- Target Countries -->
 <div class="card" style="margin-bottom:2rem">
   <div class="card-header">Target Countries (High Demand × High Price × Growth)</div>
   <div class="card-body" style="overflow-x:auto">
@@ -324,8 +298,7 @@
   </div>
 </div>
 
-<!-- Overlay: Demand vs Search Interest -->
-<div class="grid-2col">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
   <div class="card">
     <div class="card-header">Demand Index vs Search Interest (Overlay)</div>
     <div class="card-body"><canvas id="overlayScatter" height="300"></canvas></div>
@@ -367,9 +340,9 @@
   </div>
 </div>
 
-<!-- ═══ ACTIONABLE INSIGHTS ═══ -->
+<!-- ACTIONABLE INSIGHTS -->
 <h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-bottom:2rem">
   <div class="card">
     <div class="card-body" style="padding:1.25rem">
       <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Export Strategy</div>
@@ -397,10 +370,8 @@
   <div class="card">
     <div class="card-body" style="padding:1.25rem">
       <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Search-Trade Synergy</div>
-      {% with high_count=overlay_data|length %}
       <div style="font-size:1rem;font-weight:700;color:var(--blue)">High Synergy: {{ target_countries.0.country }}</div>
       <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Combines high import demand, strong pricing, and growing consumer search interest. Prioritize marketing and distribution here.</div>
-      {% endwith %}
     </div>
   </div>
 </div>
@@ -418,7 +389,6 @@ document.addEventListener('DOMContentLoaded', function(){
   var trendTime = {{ trend_over_time|safe }};
   var overlayData = {{ overlay_data|safe }};
 
-  // 1a. BD Demand Trend
   if(bdTrend.length) {
     new Chart(document.getElementById('bdDemandTrend'), {
       type: 'line',
@@ -434,7 +404,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // 1b. VAT Impact Bar
   if(vatImpact.length) {
     new Chart(document.getElementById('vatImpactBar'), {
       type: 'bar',
@@ -451,7 +420,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // 1c. BD Trade Pie
   new Chart(document.getElementById('bdTradePie'), {
     type: 'doughnut',
     data: {
@@ -465,7 +433,6 @@ document.addEventListener('DOMContentLoaded', function(){
     options: { responsive: true, cutout: '50%', plugins: { legend: { position: 'bottom' } } }
   });
 
-  // 2a. Global Demand Trend
   if(globalTrend.length) {
     new Chart(document.getElementById('globalDemandTrend'), {
       type: 'line',
@@ -487,7 +454,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // 2b. Price by Country
   if(intlData.length) {
     new Chart(document.getElementById('priceByCountryBar'), {
       type: 'bar',
@@ -504,7 +470,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // 2c. Country Growth
   if(countryGrowth.length) {
     new Chart(document.getElementById('countryGrowthBar'), {
       type: 'bar',
@@ -521,7 +486,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // 3a. Trend by Region
   if(trendRegions.length) {
     new Chart(document.getElementById('trendRegionBar'), {
       type: 'bar',
@@ -538,7 +502,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // 3b. Trend Over Time
   if(trendTime.length) {
     new Chart(document.getElementById('trendTimeLine'), {
       type: 'line',
@@ -556,7 +519,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // 4. Overlay Scatter
   if(overlayData.length) {
     new Chart(document.getElementById('overlayScatter'), {
       type: 'scatter',
@@ -590,7 +552,6 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // Map
   if(document.getElementById('demandMap') && intlData.length) {
     var map = L.map('demandMap').setView([25, 40], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
@@ -634,5 +595,4 @@ function exportCSV() {
   a.click();
 }
 </script>
-</div>
 {% endblock %}
