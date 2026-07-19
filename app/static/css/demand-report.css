@@ -1,6 +1,107 @@
-/* Demand Report — dedicated styles */
+/* ============================================
+   demand-report.css
+   Page-specific styles — fully self-contained
+   ============================================ */
 
-/* Print */
+/* --- Filter card --- */
+.demand-filter-card { margin-bottom: 1.5rem; }
+.demand-filter-card .card-body { padding: 1rem 1.25rem; }
+.demand-filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.demand-filter-field { display: flex; flex-direction: column; gap: 4px; }
+.demand-filter-field label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.demand-filter-field-cat { flex: 1 1 260px; }
+.demand-filter-field-hs { flex: 1 1 180px; }
+.demand-filter-field-country { flex: 1 1 180px; }
+.demand-filter-field-year { flex: 1 1 120px; }
+.demand-filter-field .form-input,
+.demand-filter-field select { padding: 0.5rem 0.75rem; width: 100%; }
+.demand-filter-actions { display: flex; gap: 6px; align-items: flex-end; padding-top: 18px; flex-shrink: 0; flex-wrap: wrap; }
+.demand-filter-actions .btn { padding: 0.5rem 1rem; }
+
+/* --- Section title --- */
+.demand-section-title { font-size: 1.1rem; font-weight: 700; margin: 2rem 0 1rem; color: var(--text); }
+
+/* --- Stats grid --- */
+.demand-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: var(--card); border-radius: var(--radius); padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.06); border: 1px solid rgba(0,0,0,.04); }
+.stat-card .label { font-size: 0.8rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-card .value { font-size: 1.75rem; font-weight: 800; margin: 0.25rem 0; }
+.stat-card .sub { font-size: 0.8rem; color: var(--muted); }
+
+/* --- Grid layouts --- */
+.demand-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem; }
+.demand-grid-2fr1fr { display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem; }
+.demand-grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 1.5rem; }
+.demand-grid-insights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+
+/* --- Tables --- */
+.demand-report-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.demand-report-table thead tr { border-bottom: 2px solid #e2e8f0; }
+.demand-report-table th { text-align: left; padding: 8px 10px; color: var(--muted); }
+.demand-report-table th.align-r { text-align: right; }
+.demand-report-table th.align-c { text-align: center; }
+.demand-report-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+.demand-report-table td.align-r { text-align: right; }
+.demand-report-table td.align-c { text-align: center; }
+.demand-report-table td.bold { font-weight: 600; }
+.demand-report-table td.rank { font-weight: 700; color: var(--muted); }
+.demand-report-table tbody tr:hover { background: #f8fafc; }
+.demand-report-table tbody tr.row-green { background: #f0fdf4; }
+
+/* --- Share bar --- */
+.share-bar { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.share-bar-bg { background: #e2e8f0; border-radius: 3px; height: 6px; width: 60px; flex-shrink: 0; }
+.share-bar-fill { height: 100%; border-radius: 3px; }
+
+/* --- Score bar --- */
+.score-bar { display: inline-block; height: 8px; border-radius: 4px; vertical-align: middle; margin-left: 6px; }
+
+/* --- Synergy badges --- */
+.synergy-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.synergy-high { background: #dcfce7; color: #166534; }
+.synergy-medium { background: #ffedd5; color: #9a3412; }
+.synergy-low { background: #fee2e2; color: #991b1b; }
+
+/* --- Map --- */
+#demandMap { height: 420px; width: 100%; }
+
+/* --- Price comparison --- */
+.price-block { text-align: center; margin-bottom: 20px; padding: 0 0.5rem; }
+.price-block + .price-block { border-top: 2px solid #e2e8f0; padding-top: 12px; }
+.price-label { font-size: 0.85rem; color: var(--muted); }
+.price-value { font-size: 1.8rem; font-weight: 800; }
+.price-unit { font-size: 0.75rem; color: var(--muted); }
+.price-pct { font-size: 1.4rem; font-weight: 700; }
+
+/* --- Search queries --- */
+.query-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+.query-item:last-child { border-bottom: none; }
+.query-name { font-weight: 600; font-size: 0.85rem; }
+.query-sub { font-size: 0.7rem; color: var(--muted); }
+.query-right { display: flex; align-items: center; gap: 8px; }
+.query-val { font-weight: 700; color: var(--blue); }
+
+/* --- Insight cards --- */
+.insight-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+.insight-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+.insight-title.red { color: var(--red); }
+.insight-title.green { color: var(--green); }
+.insight-title.blue { color: var(--blue); }
+.insight-title.orange { color: var(--orange); }
+.insight-text { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+/* --- Card body variations --- */
+.card-body-compact { padding: 1rem; }
+.card-body-wide { padding: 1.5rem; }
+.card-body-removable-padding { padding: 0; }
+
+/* --- Card spacing --- */
+.card-mb-2 { margin-bottom: 2rem; }
+
+/* --- Table overflow container --- */
+.table-overflow { overflow-x: auto; }
+
+/* --- Print --- */
 @media print {
   .sidebar, .topbar, .btn, form, #filterForm { display: none !important; }
   .main { margin-left: 0 !important; }
@@ -9,49 +110,63 @@
   body { background: #fff; }
 }
 
-/* Synergy badges */
-.synergy-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: .72rem; font-weight: 600; }
-.synergy-high { background: #dcfce7; color: #166534; }
-.synergy-medium { background: #ffedd5; color: #9a3412; }
-.synergy-low { background: #fee2e2; color: #991b1b; }
+/* ============ RESPONSIVE ============ */
 
-/* Score bar */
-.score-bar { display: inline-block; height: 8px; border-radius: 4px; vertical-align: middle; margin-left: 6px; }
+/* Large screens (>1400px): wider stat grid */
+@media (min-width: 1400px) {
+  .demand-stats { grid-template-columns: repeat(4, 1fr); }
+}
 
-/* Filter card */
-.demand-filter-card { margin-bottom: 1.5rem; }
-.demand-filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-.demand-filter-row + .demand-filter-row { margin-top: 10px; }
-.demand-filter-field label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
-.demand-filter-field-cat { width: 280px; }
-.demand-filter-field-hs { width: 200px; }
-.demand-filter-field-country { width: 200px; }
-.demand-filter-field-year { width: 130px; }
-.demand-filter-actions { display: flex; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+/* Tablets & small desktops (≤1100px) */
+@media (max-width: 1100px) {
+  .demand-grid-2fr1fr { grid-template-columns: 1fr; }
+  .demand-grid-3col { grid-template-columns: 1fr 1fr; }
+  .demand-grid-insights { grid-template-columns: 1fr 1fr; }
+}
 
-/* Grid layouts */
-.demand-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
-.demand-grid-2fr1fr { display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
-.demand-grid-3col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
-.demand-grid-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-
-/* Section title */
-.demand-section-title { font-size: 1.1rem; font-weight: 700; margin: 2rem 0 1rem; color: var(--text); }
-
-/* Stat cards */
-.demand-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-
-/* Responsive */
+/* Tablets (≤900px) */
 @media (max-width: 900px) {
-  .demand-stats { grid-template-columns: repeat(2, 1fr) !important; }
-  .demand-grid-2col,
-  .demand-grid-2fr1fr,
-  .demand-grid-3col { grid-template-columns: 1fr !important; }
+  .demand-stats { grid-template-columns: repeat(2, 1fr); }
+  .demand-grid-2col { grid-template-columns: 1fr; }
+  .demand-grid-3col { grid-template-columns: 1fr; }
+  .demand-grid-insights { grid-template-columns: 1fr; }
+  .demand-filter-field-cat { flex: 1 1 100%; }
+  .demand-filter-field-hs { flex: 1 1 calc(50% - 5px); }
+  .demand-filter-field-country { flex: 1 1 calc(50% - 5px); }
+  .demand-filter-field-year { flex: 1 1 100%; }
+  .demand-filter-actions { width: 100%; }
+  .content { padding: 1rem; }
+  .topbar { padding: .75rem 1rem; }
+}
+
+/* Mobile (≤600px) */
+@media (max-width: 600px) {
+  .demand-stats { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .stat-card { padding: 0.85rem; }
+  .stat-card .value { font-size: 1.2rem; }
+  .demand-section-title { font-size: 0.95rem; margin: 1.5rem 0 0.75rem; }
+  .demand-filter-row { flex-direction: column; }
   .demand-filter-field-cat,
   .demand-filter-field-hs,
   .demand-filter-field-country,
-  .demand-filter-field-year { width: 100%; }
+  .demand-filter-field-year { flex: 1 1 100%; }
+  .demand-filter-actions { flex-direction: column; padding-top: 10px; }
+  .demand-filter-actions .btn { width: 100%; text-align: center; }
+  .demand-grid-2col { grid-template-columns: 1fr; gap: 1rem; }
+  .demand-grid-2fr1fr { grid-template-columns: 1fr; gap: 1rem; }
+  .demand-grid-3col { grid-template-columns: 1fr; gap: 1rem; }
+  .demand-grid-insights { grid-template-columns: 1fr; gap: 1rem; }
+  .demand-report-table { font-size: 0.72rem; }
+  .demand-report-table th, .demand-report-table td { padding: 6px 6px; }
+  .price-value { font-size: 1.4rem; }
+  .content { padding: 0.75rem; }
+  #demandMap { height: 300px; }
 }
-@media (max-width: 480px) {
-  .demand-stats { grid-template-columns: 1fr !important; }
+
+/* Extra small (≤400px) */
+@media (max-width: 400px) {
+  .demand-stats { grid-template-columns: 1fr; }
+  .stat-card .value { font-size: 1.1rem; }
+  .card-header { font-size: 0.85rem; padding: 0.75rem 1rem; }
+  .card-body { padding: 0.85rem; }
 }

@@ -14,12 +14,12 @@
 
 <!-- FILTER BAR -->
 <div class="card demand-filter-card">
-  <div class="card-body" style="padding:1rem 1.25rem">
+  <div class="card-body">
     <form method="get" id="filterForm">
       <div class="demand-filter-row">
         <div class="demand-filter-field demand-filter-field-cat">
           <label>Product Category</label>
-          <select name="category" class="form-input" style="padding:.5rem .75rem">
+          <select name="category" class="form-input">
             {% for p in all_products %}
             <option value="{{ p }}" {% if f_category == p %}selected{% endif %}>{{ p }}</option>
             {% endfor %}
@@ -27,27 +27,25 @@
         </div>
         <div class="demand-filter-field demand-filter-field-hs">
           <label>HS Code</label>
-          <input type="text" name="hs_code" value="{{ f_hs }}" placeholder="{{ hs_code }}" class="form-input" style="padding:.5rem .75rem">
+          <input type="text" name="hs_code" value="{{ f_hs }}" placeholder="{{ hs_code }}" class="form-input">
         </div>
-      </div>
-      <div class="demand-filter-row">
         <div class="demand-filter-field demand-filter-field-country">
           <label>Country</label>
-          <input type="text" name="country" value="{{ f_country }}" placeholder="All" class="form-input" style="padding:.5rem .75rem">
+          <input type="text" name="country" value="{{ f_country }}" placeholder="All" class="form-input">
         </div>
         <div class="demand-filter-field demand-filter-field-year">
           <label>Year</label>
-          <select name="year" class="form-input" style="padding:.5rem .75rem">
+          <select name="year" class="form-input">
             <option value="2024" {% if f_year == "2024" %}selected{% endif %}>2024</option>
             <option value="2023" {% if f_year == "2023" %}selected{% endif %}>2023</option>
             <option value="2022" {% if f_year == "2022" %}selected{% endif %}>2022</option>
           </select>
         </div>
         <div class="demand-filter-actions">
-          <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
-          <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
-          <button type="button" onclick="exportCSV()" class="btn btn-outline btn-sm" style="padding:.5rem 1rem">Export CSV</button>
-          <button type="button" onclick="window.print()" class="btn btn-outline btn-sm" style="padding:.5rem 1rem">Print</button>
+          <button type="submit" class="btn btn-primary">Apply</button>
+          <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-outline">Reset</a>
+          <button type="button" onclick="exportCSV()" class="btn btn-outline btn-sm">Export CSV</button>
+          <button type="button" onclick="window.print()" class="btn btn-outline btn-sm">Print</button>
         </div>
       </div>
     </form>
@@ -120,21 +118,21 @@
   </div>
   <div class="card">
     <div class="card-header">Price Comparison</div>
-    <div class="card-body" style="padding:1.5rem">
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:.85rem;color:var(--muted)">BD Import Price</div>
-        <div style="font-size:1.8rem;font-weight:800;color:var(--blue)">${{ bd_price_import }}</div>
-        <div style="font-size:.75rem;color:var(--muted)">per {{ unit }}</div>
+    <div class="card-body card-body-wide">
+      <div class="price-block">
+        <div class="price-label">BD Import Price</div>
+        <div class="price-value" style="color:var(--blue)">${{ bd_price_import }}</div>
+        <div class="price-unit">per {{ unit }}</div>
       </div>
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:.85rem;color:var(--muted)">BD Export Price</div>
-        <div style="font-size:1.8rem;font-weight:800;color:#8b5cf6">${{ bd_price_export }}</div>
-        <div style="font-size:.75rem;color:var(--muted)">per {{ unit }}</div>
+      <div class="price-block">
+        <div class="price-label">BD Export Price</div>
+        <div class="price-value" style="color:#8b5cf6">${{ bd_price_export }}</div>
+        <div class="price-unit">per {{ unit }}</div>
       </div>
-      <div style="text-align:center;border-top:2px solid #e2e8f0;padding-top:12px">
-        <div style="font-size:.85rem;color:var(--muted)">Price Premium</div>
-        <div style="font-size:1.4rem;font-weight:700;color:{% if bd_price_export > bd_price_import %}var(--green){% else %}var(--red){% endif %}">{% if bd_price_import %}{% widthratio bd_price_export bd_price_import 100 %}{% else %}0{% endif %}%</div>
-        <div style="font-size:.75rem;color:var(--muted)">Export / Import</div>
+      <div class="price-block">
+        <div class="price-label">Price Premium</div>
+        <div class="price-pct" style="color:{% if bd_price_export > bd_price_import %}var(--green){% else %}var(--red){% endif %}">{% if bd_price_import %}{% widthratio bd_price_export bd_price_import 100 %}{% else %}0{% endif %}%</div>
+        <div class="price-unit">Export / Import</div>
       </div>
     </div>
   </div>
@@ -146,29 +144,29 @@
 <div class="demand-grid-2fr1fr">
   <div class="card">
     <div class="card-header">Top Importing Countries — Demand & Price per {{ unit|title }}</div>
-    <div class="card-body" style="overflow-x:auto">
-      <table id="intlTable" style="width:100%;border-collapse:collapse;font-size:.82rem">
+    <div class="card-body table-overflow">
+      <table class="demand-report-table" id="intlTable">
         <thead>
-          <tr style="border-bottom:2px solid #e2e8f0">
-            <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
-            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Import Value</th>
-            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Quantity</th>
-            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Price/{{ unit }}</th>
-            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Market Share</th>
+          <tr>
+            <th>Country</th>
+            <th class="align-r">Import Value</th>
+            <th class="align-r">Quantity</th>
+            <th class="align-r">Price/{{ unit }}</th>
+            <th class="align-r">Market Share</th>
           </tr>
         </thead>
         <tbody>
           {% for d in intl_importers_list %}
-          <tr style="border-bottom:1px solid #f1f5f9">
-            <td style="padding:8px 10px;font-weight:600">{{ d.country }}</td>
-            <td style="text-align:right;padding:8px 10px">${{ d.import_value|floatformat:0 }}</td>
-            <td style="text-align:right;padding:8px 10px">{{ d.quantity|floatformat:0 }}</td>
-            <td style="text-align:right;padding:8px 10px;color:{% if d.price_per_unit > global_avg_price %}var(--green){% else %}var(--orange){% endif %}">${{ d.price_per_unit }}</td>
-            <td style="text-align:right;padding:8px 10px">
-              <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+          <tr>
+            <td class="bold">{{ d.country }}</td>
+            <td class="align-r">${{ d.import_value|floatformat:0 }}</td>
+            <td class="align-r">{{ d.quantity|floatformat:0 }}</td>
+            <td class="align-r" style="color:{% if d.price_per_unit > global_avg_price %}var(--green){% else %}var(--orange){% endif %}">${{ d.price_per_unit }}</td>
+            <td class="align-r">
+              <div class="share-bar">
                 <span>{{ d.market_share }}%</span>
-                <div style="background:#e2e8f0;border-radius:3px;height:6px;width:60px">
-                  <div style="background:{% if d.market_share > 20 %}var(--blue){% elif d.market_share > 10 %}#8b5cf6{% else %}#94a3b8{% endif %};height:100%;width:{% widthratio d.market_share 100 100 %}%;border-radius:3px"></div>
+                <div class="share-bar-bg">
+                  <div class="share-bar-fill" style="background:{% if d.market_share > 20 %}var(--blue){% elif d.market_share > 10 %}#8b5cf6{% else %}#94a3b8{% endif %};width:{% widthratio d.market_share 100 100 %}%"></div>
                 </div>
               </div>
             </td>
@@ -180,8 +178,8 @@
   </div>
   <div class="card">
     <div class="card-header">Global Demand Map</div>
-    <div class="card-body" style="padding:0">
-      <div id="demandMap" style="height:420px;width:100%"></div>
+    <div class="card-body card-body-removable-padding">
+      <div id="demandMap"></div>
     </div>
   </div>
 </div>
@@ -197,7 +195,7 @@
   </div>
 </div>
 
-<div class="card" style="margin-bottom:2rem">
+<div class="card card-mb-2">
   <div class="card-header">Country-wise Demand Growth (YoY %)</div>
   <div class="card-body"><canvas id="countryGrowthBar" height="240"></canvas></div>
 </div>
@@ -216,17 +214,18 @@
   </div>
   <div class="card">
     <div class="card-header">Related Search Queries</div>
-    <div class="card-body" style="padding:1rem">
+    <div class="card-body card-body-compact">
       {% for q in related_queries %}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;{% if not forloop.last %}border-bottom:1px solid #f1f5f9{% endif %}">
+      {% for q in related_queries %}
+      <div class="query-item">
         <div>
-          <div style="font-weight:600;font-size:.85rem">{{ q.query }}</div>
-          <div style="font-size:.7rem;color:var(--muted)">Related search</div>
+          <div class="query-name">{{ q.query }}</div>
+          <div class="query-sub">Related search</div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:700;color:var(--blue)">{{ q.interest }}</span>
-          <div style="background:#e2e8f0;border-radius:3px;height:6px;width:60px">
-            <div style="background:var(--blue);height:100%;width:{{ q.interest }}%;border-radius:3px"></div>
+        <div class="query-right">
+          <span class="query-val">{{ q.interest }}</span>
+          <div class="share-bar-bg">
+            <div class="share-bar-fill" style="background:var(--blue);width:{{ q.interest }}%"></div>
           </div>
         </div>
       </div>
@@ -238,34 +237,34 @@
 <!-- SECTION 4: COMBINED INSIGHTS -->
 <h2 class="demand-section-title">4. Combined Insights — Trade + Trends + Pricing</h2>
 
-<div class="card" style="margin-bottom:2rem">
+<div class="card card-mb-2">
   <div class="card-header">Target Countries (High Demand × High Price × Growth)</div>
-  <div class="card-body" style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+  <div class="card-body table-overflow">
+    <table class="demand-report-table">
       <thead>
-        <tr style="border-bottom:2px solid #e2e8f0">
-          <th style="text-align:left;padding:8px 10px;color:var(--muted)">Rank</th>
-          <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
-          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Demand ($)</th>
-          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Price/{{ unit }}</th>
-          <th style="text-align:right;padding:8px 10px;color:var(--muted)">YoY Growth</th>
-          <th style="text-align:right;padding:8px 10px;color:var(--muted)">Opportunity Score</th>
-          <th style="text-align:center;padding:8px 10px;color:var(--muted)">Rating</th>
+        <tr>
+          <th>Rank</th>
+          <th>Country</th>
+          <th class="align-r">Demand ($)</th>
+          <th class="align-r">Price/{{ unit }}</th>
+          <th class="align-r">YoY Growth</th>
+          <th class="align-r">Opportunity Score</th>
+          <th class="align-c">Rating</th>
         </tr>
       </thead>
       <tbody>
         {% for t in target_countries %}
-        <tr style="border-bottom:1px solid #f1f5f9;{% if t.recommendation == 'Strong' %}background:#f0fdf4{% endif %}">
-          <td style="padding:8px 10px;font-weight:700;color:var(--muted)">{{ forloop.counter }}</td>
-          <td style="padding:8px 10px;font-weight:600">{{ t.country }}</td>
-          <td style="text-align:right;padding:8px 10px">${{ t.demand|floatformat:0 }}</td>
-          <td style="text-align:right;padding:8px 10px;color:{% if t.price > global_avg_price %}var(--green){% else %}var(--orange){% endif %}">${{ t.price }}</td>
-          <td style="text-align:right;padding:8px 10px;color:{% if t.growth > 0 %}var(--green){% else %}var(--red){% endif %}">{{ t.growth }}%</td>
-          <td style="text-align:right;padding:8px 10px;font-weight:700">
+        <tr{% if t.recommendation == 'Strong' %} class="row-green"{% endif %}>
+          <td class="rank">{{ forloop.counter }}</td>
+          <td class="bold">{{ t.country }}</td>
+          <td class="align-r">${{ t.demand|floatformat:0 }}</td>
+          <td class="align-r" style="color:{% if t.price > global_avg_price %}var(--green){% else %}var(--orange){% endif %}">${{ t.price }}</td>
+          <td class="align-r" style="color:{% if t.growth > 0 %}var(--green){% else %}var(--red){% endif %}">{{ t.growth }}%</td>
+          <td class="align-r bold">
             {{ t.score }}
             <span class="score-bar" style="width:{% widthratio t.score 10 50 %}px;background:{% if t.score > 3 %}var(--green){% elif t.score > 1.5 %}#f59e0b{% else %}#94a3b8{% endif %}"></span>
           </td>
-          <td style="text-align:center;padding:8px 10px">
+          <td class="align-c">
             {% if t.recommendation == "Strong" %}
             <span class="synergy-badge synergy-high">Strong</span>
             {% elif t.recommendation == "Moderate" %}
@@ -288,25 +287,25 @@
   </div>
   <div class="card">
     <div class="card-header">Synergy Analysis</div>
-    <div class="card-body" style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+    <div class="card-body table-overflow">
+      <table class="demand-report-table">
         <thead>
-          <tr style="border-bottom:2px solid #e2e8f0">
-            <th style="text-align:left;padding:8px 10px;color:var(--muted)">Country</th>
-            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Demand Idx</th>
-            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Search</th>
-            <th style="text-align:right;padding:8px 10px;color:var(--muted)">Price</th>
-            <th style="text-align:center;padding:8px 10px;color:var(--muted)">Synergy</th>
+          <tr>
+            <th>Country</th>
+            <th class="align-r">Demand Idx</th>
+            <th class="align-r">Search</th>
+            <th class="align-r">Price</th>
+            <th class="align-c">Synergy</th>
           </tr>
         </thead>
         <tbody>
           {% for o in overlay_data %}
-          <tr style="border-bottom:1px solid #f1f5f9">
-            <td style="padding:8px 10px;font-weight:600">{{ o.country }}</td>
-            <td style="text-align:right;padding:8px 10px">{{ o.demand_index }}</td>
-            <td style="text-align:right;padding:8px 10px">{{ o.search_interest }}</td>
-            <td style="text-align:right;padding:8px 10px">${{ o.price }}</td>
-            <td style="text-align:center;padding:8px 10px">
+          <tr>
+            <td class="bold">{{ o.country }}</td>
+            <td class="align-r">{{ o.demand_index }}</td>
+            <td class="align-r">{{ o.search_interest }}</td>
+            <td class="align-r">${{ o.price }}</td>
+            <td class="align-c">
               {% if o.synergy == "High" %}
               <span class="synergy-badge synergy-high">High</span>
               {% elif o.synergy == "Medium" %}
@@ -327,34 +326,34 @@
 <h2 class="demand-section-title">Actionable Insights</h2>
 <div class="demand-grid-insights">
   <div class="card">
-    <div class="card-body" style="padding:1.25rem">
-      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Export Strategy</div>
+    <div class="card-body">
+      <div class="insight-label">Export Strategy</div>
       {% if bd_trade_balance < 0 %}
-      <div style="font-size:1rem;font-weight:700;color:var(--red)">Trade Deficit ({{ bd_trade_balance }}%)</div>
-      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">BD imports exceed exports in {{ selected_category }}. Target {{ target_countries.0.country }} and {{ target_countries.1.country }} for export growth — they show high demand + price.</div>
+      <div class="insight-title red">Trade Deficit ({{ bd_trade_balance }}%)</div>
+      <div class="insight-text">BD imports exceed exports in {{ selected_category }}. Target {{ target_countries.0.country }} and {{ target_countries.1.country }} for export growth — they show high demand + price.</div>
       {% else %}
-      <div style="font-size:1rem;font-weight:700;color:var(--green)">Trade Surplus ({{ bd_trade_balance }}%)</div>
-      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Strong BD export position. Scale to {{ target_countries.0.country }} where demand and pricing are optimal.</div>
+      <div class="insight-title green">Trade Surplus ({{ bd_trade_balance }}%)</div>
+      <div class="insight-text">Strong BD export position. Scale to {{ target_countries.0.country }} where demand and pricing are optimal.</div>
       {% endif %}
     </div>
   </div>
   <div class="card">
-    <div class="card-body" style="padding:1.25rem">
-      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Pricing Opportunity</div>
+    <div class="card-body">
+      <div class="insight-label">Pricing Opportunity</div>
       {% if bd_price_export > global_avg_price %}
-      <div style="font-size:1rem;font-weight:700;color:var(--green)">BD Export Price Above Global Avg</div>
-      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">BD commands a premium of ${{ bd_price_export|floatformat:0 }} vs global ${{ global_avg_price }}. Leverage quality positioning in premium markets.</div>
+      <div class="insight-title green">BD Export Price Above Global Avg</div>
+      <div class="insight-text">BD commands a premium of ${{ bd_price_export|floatformat:0 }} vs global ${{ global_avg_price }}. Leverage quality positioning in premium markets.</div>
       {% else %}
-      <div style="font-size:1rem;font-weight:700;color:var(--orange)">BD Export Price Below Global Avg</div>
-      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Price gap of ${{ global_avg_price|floatformat:0 }} vs ${{ bd_price_export|floatformat:0 }}. Consider value addition or targeting price-sensitive markets.</div>
+      <div class="insight-title orange">BD Export Price Below Global Avg</div>
+      <div class="insight-text">Price gap of ${{ global_avg_price|floatformat:0 }} vs ${{ bd_price_export|floatformat:0 }}. Consider value addition or targeting price-sensitive markets.</div>
       {% endif %}
     </div>
   </div>
   <div class="card">
-    <div class="card-body" style="padding:1.25rem">
-      <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Search-Trade Synergy</div>
-      <div style="font-size:1rem;font-weight:700;color:var(--blue)">High Synergy: {{ target_countries.0.country }}</div>
-      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">Combines high import demand, strong pricing, and growing consumer search interest. Prioritize marketing and distribution here.</div>
+    <div class="card-body">
+      <div class="insight-label">Search-Trade Synergy</div>
+      <div class="insight-title blue">High Synergy: {{ target_countries.0.country }}</div>
+      <div class="insight-text">Combines high import demand, strong pricing, and growing consumer search interest. Prioritize marketing and distribution here.</div>
     </div>
   </div>
 </div>
