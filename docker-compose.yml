@@ -75,11 +75,13 @@ services:
     container_name: buyzenix_nginx
     restart: unless-stopped
     ports:
-      - "${HTTP_PORT:-80}:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_volume:/app/staticfiles
       - media_volume:/app/media
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - web
 
