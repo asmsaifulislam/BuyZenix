@@ -5,6 +5,14 @@
 
 {% block content %}
 
+{% block nav_extras %}
+<select onchange="window.location.search = '?sort_price=' + this.value" style="padding: 6px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #333; font-size: 0.8rem; font-weight: 500; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); min-width: 130px; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;">
+  <option value="">Sort by (Featured)</option>
+  <option value="low_to_high" {% if price_sort == 'low_to_high' %}selected{% endif %}>Lowest Price</option>
+  <option value="high_to_low">Highest Price</option>
+</select>
+{% endblock %}
+
 {% if banners %}
 <div class="container" style="margin-top:1rem">
   <div style="position:relative;border-radius:20px;overflow:hidden;max-height:300px">
@@ -87,13 +95,6 @@
           <div class="hero-actions">
             <a class="btn btn-primary btn-lg" href="{% url 'core:product_list' %}">Start shopping</a>
             <a class="btn btn-outline btn-lg" href="{% url 'accounts:register' %}">Start selling</a>
-          </div>
-<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <select onchange="window.location.search = '?sort_price=' + this.value" style="padding: 10px 18px; border-radius: 15px; border: 1px solid rgba(0,0,0,0.2); background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #000; font-size: 0.85rem; font-weight: 500; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-width: 140px; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px;">
-              <option value="">Sort by (Featured)</option>
-              <option value="low_to_high" {% if price_sort == 'low_to_high' %}selected{% endif %}>Lowest Price</option>
-              <option value="high_to_low">Highest Price</option>
-            </select>
           </div>
         </div>
 
