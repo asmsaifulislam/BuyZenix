@@ -12,7 +12,7 @@
   <meta property="og:site_name" content="BuyZenix" />
   <meta property="og:url" content="{{ request.build_absolute_uri }}" />
   {% block extra_head %}{% endblock %}
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20" />
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=21" />
 </head>
 <body>
   <header class="site-header" id="siteHeader">
@@ -50,6 +50,10 @@
           <span>🔍</span>
           <input type="text" name="q" placeholder="Search..." value="{{ query|default:'' }}" />
         </form>
+        <form class="mobile-search" action="{% url 'core:product_list' %}" method="get">
+          <span>🔍</span>
+          <input type="text" name="q" placeholder="Search..." value="{{ query|default:'' }}" />
+        </form>
         <form method="get" action="{% url 'core:set_currency' %}">
           <input type="hidden" name="next" value="{{ request.path }}" />
           <select class="currency-select" name="code" onchange="this.form.submit()">
@@ -76,6 +80,10 @@
   </header>
 
   <div class="mobile-menu" id="mobileMenu" style="display:none">
+    <form class="mobile-search" action="{% url 'core:product_list' %}" method="get" style="margin-bottom:.75rem">
+      <span>🔍</span>
+      <input type="text" name="q" placeholder="Search products..." value="{{ query|default:'' }}" style="border:none;outline:none;background:transparent;width:100%;color:var(--text);font-size:1rem" />
+    </form>
     <a href="{% url 'core:product_list' %}">Shop</a>
     <a href="{% url 'core:home' %}#featured">Featured</a>
     <a href="{% url 'core:home' %}#categories">Categories</a>

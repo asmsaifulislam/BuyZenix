@@ -160,9 +160,9 @@
 
         <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
           <p style="font-size:.8rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">Share this product</p>
-          <div style="display:flex;gap:.5rem;margin-bottom:.65rem">
+          <div class="share-row" style="display:flex;gap:.5rem;margin-bottom:.65rem;flex-wrap:wrap">
             <input type="text" id="shareUrl" value="{{ request.build_absolute_uri }}" readonly
-              style="flex:1;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text);background:#f8fafc;font-family:monospace" />
+              style="flex:1;min-width:0;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text);background:#f8fafc;font-family:monospace" />
             <button type="button" onclick="copyShareUrl()" id="copyBtn"
               style="padding:.5rem 1rem;border:none;border-radius:8px;background:var(--primary);color:#fff;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .15s">
               📋 Copy
@@ -183,7 +183,7 @@
         <div class="pd-related">
           <hr class="sep" />
           <h4>Related products</h4>
-          <div class="product-grid" style="grid-template-columns:repeat(2,1fr)">
+          <div class="product-grid">
             {% for p in related %}
               {% include "core/_product_card.html" %}
             {% endfor %}

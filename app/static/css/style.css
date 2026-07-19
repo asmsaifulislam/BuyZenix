@@ -82,10 +82,9 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.2; }
 .pd-specs-key { text-transform: uppercase; letter-spacing: .02em; }
 
 /* ---------- Container ---------- */
-.container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0; }
-@media (min-width: 480px) { .container { padding: 0; } }
-@media (min-width: 768px) { .container { padding: 0; } }
-@media (min-width: 1024px) { .container { padding: 0; } }
+.container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+@media (min-width: 640px) { .container { padding: 0 1.5rem; } }
+@media (min-width: 1024px) { .container { padding: 0 2rem; } }
 
 /* ---------- Header ---------- */
 .site-header {
@@ -730,3 +729,111 @@ select.form-input { cursor: pointer; appearance: auto; }
 /* ---------- Checkout responsive ---------- */
 .checkout-layout { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
 @media (min-width: 768px) { .checkout-layout { grid-template-columns: 1fr 360px; } }
+
+/* ============================================================
+   MOBILE RESPONSIVENESS (comprehensive)
+   ============================================================ */
+
+/* --- Mobile search --- */
+.mobile-search {
+  display: flex; align-items: center; gap: .4rem;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: .75rem; padding: .35rem .7rem;
+}
+.mobile-search input {
+  border: none; outline: none; background: transparent;
+  width: 100%; color: var(--text); font-size: .9rem;
+}
+@media (min-width: 640px) { .mobile-search { display: none; } }
+
+/* --- Header mobile --- */
+@media (max-width: 639px) {
+  .header-actions { gap: .3rem; }
+  .brand { font-size: 1.1rem; }
+  .cart-link { padding: .3rem; }
+  .currency-select { padding: .25rem .3rem; font-size: .7rem; }
+  .mobile-toggle { min-width: 36px; min-height: 36px; }
+}
+
+/* --- Product detail mobile --- */
+@media (max-width: 767px) {
+  .pd-grid { gap: 1.25rem; }
+  .pd-info h1 { font-size: 1.3rem; }
+  .pd-info .price { font-size: 1.3rem; }
+  .pd-add-form { max-width: 100%; }
+  .pd-add-form input[type="number"] { width: 60px; }
+  .pd-specs-table td { padding: .5rem .65rem; font-size: .82rem; }
+  .pd-specs-key { white-space: normal; }
+  .pd-related .product-grid { grid-template-columns: repeat(2, 1fr); }
+  .share-row { flex-wrap: wrap; }
+  .share-row input { min-width: 0; flex-basis: 100%; margin-bottom: .5rem; }
+  .share-row .btn { flex-shrink: 0; }
+}
+
+/* --- Home banner mobile --- */
+@media (max-width: 767px) {
+  .banner-overlay { padding: 0 1rem !important; }
+  .banner-img { height: 200px !important; max-height: 200px !important; }
+  .hero-center { padding: 0 .5rem; }
+  .hero-center h1 { font-size: clamp(1.4rem, 7vw, 2rem); }
+}
+
+/* --- Product grid single column on small screens --- */
+@media (max-width: 480px) {
+  .product-grid { grid-template-columns: 1fr; }
+  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* --- Cart mobile --- */
+@media (max-width: 480px) {
+  .cart-item { padding: .75rem; gap: .75rem; }
+  .cart-item .thumb { width: 56px; height: 56px; }
+  .cart-item strong { font-size: .85rem; }
+  .summary { padding: 1rem; }
+}
+
+/* --- Forms mobile --- */
+@media (max-width: 480px) {
+  .form-card { padding: 1.25rem; }
+  .form-grid .field { grid-column: 1 / -1; }
+  .form-group[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+}
+
+/* --- Touch-friendly tap targets --- */
+@media (hover: none) and (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 38px; }
+  .main-nav a { padding: .6rem 1rem; min-height: 44px; display: flex; align-items: center; }
+  .cart-link { min-height: 44px; display: flex; align-items: center; }
+  .mobile-toggle { min-width: 44px; min-height: 44px; }
+}
+
+/* --- Tables horizontal scroll --- */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Dashboard tables: auto-scroll on mobile */
+@media (max-width: 767px) {
+  .card-body table,
+  .card table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
+
+/* --- Mobile menu improvements --- */
+@media (max-width: 859px) {
+  .mobile-menu {
+    padding-top: 1rem;
+  }
+  .mobile-menu a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .mobile-menu .mobile-search-form {
+    display: flex !important;
+    margin-bottom: .5rem;
+  }
+}

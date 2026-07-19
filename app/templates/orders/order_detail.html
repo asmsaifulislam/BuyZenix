@@ -13,13 +13,12 @@
     </div>
     <hr class="sep" />
     {% for item in order.items.all %}
-      <div class="cart-item">
-        <div></div>
-        <div>
-          <strong>{{ item.product.name }}</strong>
-          <div style="color:var(--text-muted);font-size:.85rem">{% money item.price %} × {{ item.quantity }}</div>
+      <div class="cart-item" style="flex-wrap:wrap">
+        <div style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+          <strong style="font-size:.9rem">{{ item.product.name }}</strong>
+          <span style="font-weight:800">{% money item.get_cost %}</span>
         </div>
-        <div style="font-weight:800">{% money item.get_cost %}</div>
+        <div style="width:100%;color:var(--text-muted);font-size:.85rem">{% money item.price %} × {{ item.quantity }}</div>
       </div>
     {% endfor %}
     <div class="summary" style="margin-top:1.5rem">

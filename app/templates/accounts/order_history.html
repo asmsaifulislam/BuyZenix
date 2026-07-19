@@ -12,16 +12,17 @@
     </div>
     {% if orders %}
       {% for order in orders %}
-        <div class="cart-item">
-          <div></div>
-          <div>
-            <strong>Order #{{ order.id }}</strong>
-            <div style="color:var(--text-muted);font-size:.85rem">{{ order.created|date:"M d, Y H:i" }} — {{ order.items.count }} item{{ order.items.count|pluralize }}</div>
-          </div>
-          <div>
+        <div class="cart-item" style="flex-wrap:wrap">
+          <div style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+            <strong style="font-size:.9rem">Order #{{ order.id }}</strong>
             <span class="badge badge-pending">{{ order.get_status_display }}</span>
-            <div style="font-weight:800;margin-top:.35rem">{% money order.get_total_cost %}</div>
-            <a class="btn btn-outline btn-sm" href="{% url 'orders:order_detail' order.id %}" style="margin-top:.5rem">View</a>
+          </div>
+          <div style="width:100%;display:flex;justify-content:space-between;align-items:center;color:var(--text-muted);font-size:.85rem">
+            <span>{{ order.created|date:"M d, Y H:i" }} — {{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+            <span style="font-weight:800;color:var(--text)">{% money order.get_total_cost %}</span>
+          </div>
+          <div style="width:100%;margin-top:.5rem">
+            <a class="btn btn-outline btn-sm" href="{% url 'orders:order_detail' order.id %}">View details</a>
           </div>
         </div>
       {% endfor %}

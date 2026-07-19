@@ -10,8 +10,8 @@
   <div style="position:relative;border-radius:20px;overflow:hidden;max-height:300px">
     {% for banner in banners %}
       {% if forloop.first %}
-      <img src="{{ banner.image.url }}" alt="{{ banner.title }}" style="width:100%;height:300px;object-fit:cover" />
-      <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.5),transparent);display:flex;align-items:center;padding:0 3rem">
+      <img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="banner-img" style="width:100%;height:300px;object-fit:cover" />
+      <div class="banner-overlay" style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.5),transparent);display:flex;align-items:center;padding:0 3rem">
         <div>
           <h2 style="color:#fff;font-size:clamp(1.5rem,3vw,2.5rem);margin:0 0 .5rem">{{ banner.title }}</h2>
           {% if banner.link_url %}<a href="{{ banner.link_url }}" class="btn btn-primary">Shop Now</a>{% endif %}
