@@ -1,0 +1,51 @@
+/* Demand Report — dedicated styles */
+
+/* Print */
+@media print {
+  .sidebar, .topbar, .btn, form, #filterForm { display: none !important; }
+  .main { margin-left: 0 !important; }
+  .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #ccc; }
+  #demandMap { display: none !important; }
+  body { background: #fff; }
+}
+
+/* Synergy badges */
+.synergy-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: .72rem; font-weight: 600; }
+.synergy-high { background: #dcfce7; color: #166534; }
+.synergy-medium { background: #ffedd5; color: #9a3412; }
+.synergy-low { background: #fee2e2; color: #991b1b; }
+
+/* Score bar */
+.score-bar { display: inline-block; height: 8px; border-radius: 4px; vertical-align: middle; margin-left: 6px; }
+
+/* Filter card */
+.demand-filter-card { margin-bottom: 1.5rem; }
+.demand-filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.demand-filter-row + .demand-filter-row { margin-top: 10px; }
+.demand-filter-field { flex: 1 1 180px; }
+.demand-filter-field label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+.demand-filter-actions { display: flex; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+
+/* Grid layouts */
+.demand-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+.demand-grid-2fr1fr { display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+.demand-grid-3col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+.demand-grid-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+
+/* Section title */
+.demand-section-title { font-size: 1.1rem; font-weight: 700; margin: 2rem 0 1rem; color: var(--text); }
+
+/* Stat cards */
+.demand-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .demand-stats { grid-template-columns: repeat(2, 1fr) !important; }
+  .demand-grid-2col,
+  .demand-grid-2fr1fr,
+  .demand-grid-3col { grid-template-columns: 1fr !important; }
+  .demand-filter-field { flex: 1 1 100%; min-width: 0; }
+}
+@media (max-width: 480px) {
+  .demand-stats { grid-template-columns: 1fr !important; }
+}

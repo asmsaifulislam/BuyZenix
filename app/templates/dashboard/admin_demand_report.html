@@ -1,4 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
+{% load static %}
 {% load currency_tags %}
 
 {% block dash_title %}Product Demand Dashboard{% endblock %}
@@ -6,63 +7,43 @@
 
 {% block dash_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{% static 'css/demand-report.css' %}" />
 {% endblock %}
 
 {% block dash_content %}
 
-<style>
-  @media print {
-    .sidebar,.topbar,.btn,form,#filterForm { display:none !important; }
-    .main { margin-left:0 !important; }
-    .card { break-inside:avoid; box-shadow:none !important; border:1px solid #ccc; }
-    #demandMap { display:none !important; }
-    body { background:#fff; }
-  }
-  .synergy-badge { display:inline-block; padding:2px 10px; border-radius:10px; font-size:.72rem; font-weight:600; }
-  .synergy-high { background:#dcfce7; color:#166534; }
-  .synergy-medium { background:#ffedd5; color:#9a3412; }
-  .synergy-low { background:#fee2e2; color:#991b1b; }
-  .score-bar { display:inline-block; height:8px; border-radius:4px; vertical-align:middle; margin-left:6px; }
-  @media (max-width:900px) {
-    .stats { grid-template-columns:repeat(2,1fr) !important; }
-  }
-  @media (max-width:480px) {
-    .stats { grid-template-columns:1fr !important; }
-  }
-</style>
-
 <!-- FILTER BAR -->
-<div class="card" style="margin-bottom:1.5rem">
+<div class="card demand-filter-card">
   <div class="card-body" style="padding:1rem 1.25rem">
     <form method="get" id="filterForm">
-      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px">
-        <div style="flex:1 1 200px">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Product Category</label>
+      <div class="demand-filter-row">
+        <div class="demand-filter-field">
+          <label>Product Category</label>
           <select name="category" class="form-input" style="padding:.5rem .75rem">
             {% for p in all_products %}
             <option value="{{ p }}" {% if f_category == p %}selected{% endif %}>{{ p }}</option>
             {% endfor %}
           </select>
         </div>
-        <div style="flex:1 1 160px">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">HS Code</label>
+        <div class="demand-filter-field">
+          <label>HS Code</label>
           <input type="text" name="hs_code" value="{{ f_hs }}" placeholder="{{ hs_code }}" class="form-input" style="padding:.5rem .75rem">
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
-        <div style="flex:1 1 160px">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Country</label>
+      <div class="demand-filter-row">
+        <div class="demand-filter-field">
+          <label>Country</label>
           <input type="text" name="country" value="{{ f_country }}" placeholder="All" class="form-input" style="padding:.5rem .75rem">
         </div>
-        <div style="flex:1 1 130px">
-          <label style="display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)">Year</label>
+        <div class="demand-filter-field" style="flex:0 1 150px">
+          <label>Year</label>
           <select name="year" class="form-input" style="padding:.5rem .75rem">
             <option value="2024" {% if f_year == "2024" %}selected{% endif %}>2024</option>
             <option value="2023" {% if f_year == "2023" %}selected{% endif %}>2023</option>
             <option value="2022" {% if f_year == "2022" %}selected{% endif %}>2022</option>
           </select>
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
+        <div class="demand-filter-actions">
           <button type="submit" class="btn btn-primary" style="padding:.5rem 1rem">Apply</button>
           <a href="{% url 'dashboard:admin_demand_report' %}" class="btn btn-outline" style="padding:.5rem 1rem">Reset</a>
           <button type="button" onclick="exportCSV()" class="btn btn-outline btn-sm" style="padding:.5rem 1rem">Export CSV</button>
@@ -74,8 +55,8 @@
 </div>
 
 <!-- EXECUTIVE SUMMARY -->
-<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Executive Summary</h2>
-<div class="stats">
+<h2 class="demand-section-title">Executive Summary</h2>
+<div class="demand-stats">
   <div class="stat-card">
     <div class="label">BD Exports</div>
     <div class="value" style="color:var(--green)">${{ bd_export_value|floatformat:0 }}</div>
@@ -118,10 +99,10 @@
   </div>
 </div>
 
-<!-- SECTION 1: NATIONAL (BANGLADESH) DEMAND & PRICING -->
-<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">1. National (Bangladesh) Demand & Pricing</h2>
+<!-- SECTION 1: NATIONAL DEMAND & PRICING -->
+<h2 class="demand-section-title">1. National (Bangladesh) Demand & Pricing</h2>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+<div class="demand-grid-2col">
   <div class="card">
     <div class="card-header">BD Export vs Import Demand Trend (Monthly)</div>
     <div class="card-body"><canvas id="bdDemandTrend" height="300"></canvas></div>
@@ -132,7 +113,7 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+<div class="demand-grid-2fr1fr">
   <div class="card">
     <div class="card-header">BD Trade Value Breakdown</div>
     <div class="card-body"><canvas id="bdTradePie" height="260"></canvas></div>
@@ -160,9 +141,9 @@
 </div>
 
 <!-- SECTION 2: INTERNATIONAL DEMAND & PRICING -->
-<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">2. International Demand & Pricing</h2>
+<h2 class="demand-section-title">2. International Demand & Pricing</h2>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:2rem">
+<div class="demand-grid-2fr1fr">
   <div class="card">
     <div class="card-header">Top Importing Countries — Demand & Price per {{ unit|title }}</div>
     <div class="card-body" style="overflow-x:auto">
@@ -205,7 +186,7 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+<div class="demand-grid-2col">
   <div class="card">
     <div class="card-header">Global Demand Trend (2020–2024)</div>
     <div class="card-body"><canvas id="globalDemandTrend" height="280"></canvas></div>
@@ -221,10 +202,10 @@
   <div class="card-body"><canvas id="countryGrowthBar" height="240"></canvas></div>
 </div>
 
-<!-- SECTION 3: CONSUMER INTEREST (GOOGLE TRENDS) -->
-<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">3. Consumer Interest (Search Trends)</h2>
+<!-- SECTION 3: CONSUMER INTEREST -->
+<h2 class="demand-section-title">3. Consumer Interest (Search Trends)</h2>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:2rem">
+<div class="demand-grid-3col">
   <div class="card">
     <div class="card-header">Search Interest by Region</div>
     <div class="card-body"><canvas id="trendRegionBar" height="300"></canvas></div>
@@ -255,7 +236,7 @@
 </div>
 
 <!-- SECTION 4: COMBINED INSIGHTS -->
-<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">4. Combined Insights — Trade + Trends + Pricing</h2>
+<h2 class="demand-section-title">4. Combined Insights — Trade + Trends + Pricing</h2>
 
 <div class="card" style="margin-bottom:2rem">
   <div class="card-header">Target Countries (High Demand × High Price × Growth)</div>
@@ -300,7 +281,7 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+<div class="demand-grid-2col">
   <div class="card">
     <div class="card-header">Demand Index vs Search Interest (Overlay)</div>
     <div class="card-body"><canvas id="overlayScatter" height="300"></canvas></div>
@@ -343,8 +324,8 @@
 </div>
 
 <!-- ACTIONABLE INSIGHTS -->
-<h2 style="font-size:1.1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text)">Actionable Insights</h2>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-bottom:2rem">
+<h2 class="demand-section-title">Actionable Insights</h2>
+<div class="demand-grid-insights">
   <div class="card">
     <div class="card-body" style="padding:1.25rem">
       <div style="font-size:.85rem;color:var(--muted);margin-bottom:8px">Export Strategy</div>
