@@ -131,6 +131,19 @@ div.header {
 
 #result_list tr:hover td { background: #f8f9fa !important; }
 #result_list a { color: #2563eb !important; font-weight: 500 !important; }
+#result_list td a { color: #2563eb !important; }
+
+#result_list td:first-child,
+#result_list th:first-child {
+  width: auto !important;
+  text-align: left !important;
+}
+
+#result_list .selected td,
+#result_list tr.selected td {
+  background: #dbeafe !important;
+  color: #111 !important;
+}
 
 .object-tools a {
   background: #2563eb !important;

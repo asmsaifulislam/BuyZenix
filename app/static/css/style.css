@@ -364,28 +364,22 @@ select.form-input { cursor: pointer; appearance: auto; }
 .hero-banner h1 {
   font-size: clamp(1.75rem, 5vw, 3.5rem); font-weight: 900;
   margin: 0 0 1rem; letter-spacing: -.03em; line-height: 1.1; color: #fff;
-  -webkit-text-stroke: 2px #000; paint-order: stroke fill;
 }
 .hero-banner h1 span {
   background: linear-gradient(135deg, #eab308, #f97316);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  -webkit-text-stroke: 2px #3b82f6; paint-order: stroke fill;
 }
-.hero-banner p { color: #6366f1; font-weight: 500; font-size: 1rem; margin: 0 auto 1.75rem; max-width: 28rem; line-height: 1.6;
-  -webkit-text-stroke: 1px #000; paint-order: stroke fill;
-}
+.hero-banner p { color: #6366f1; font-weight: 500; font-size: 1rem; margin: 0 auto 1.75rem; max-width: 28rem; line-height: 1.6; }
 @media (min-width: 768px) { .hero-banner p { font-size: 1.15rem; margin-bottom: 2rem; } }
 .hero-actions { display: flex; justify-content: center; gap: .75rem; flex-wrap: wrap; }
 .hero-actions .btn-outline {
   border: 1.5px solid rgba(249,115,22,.4); color: #fff; background: linear-gradient(135deg, #f97316, #ea580c);
   backdrop-filter: blur(8px);
-  -webkit-text-stroke: 1px #000; paint-order: stroke fill;
 }
 .hero-actions .btn-outline:hover { background: linear-gradient(135deg, #ea580c, #dc2626); border-color: #f97316; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,115,22,.3); }
 .hero-actions .btn-primary {
   background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff;
   box-shadow: 0 8px 24px rgba(79, 70, 229, .3); border: 1px solid rgba(255,255,255,.2);
-  -webkit-text-stroke: 1px #000; paint-order: stroke fill;
 }
 .hero-actions .btn-primary:hover { box-shadow: 0 12px 32px rgba(79, 70, 229, .4); transform: translateY(-2px); }
 
