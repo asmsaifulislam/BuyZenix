@@ -1,37 +1,92 @@
-<div id="chatbot-widget" style="position:fixed;bottom:20px;right:20px;z-index:1000">
-  <button id="chatbot-toggle" onclick="toggleChat()" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#9333ea);color:#fff;border:none;cursor:pointer;font-size:1.5rem;box-shadow:0 4px 14px rgba(79,70,229,.4);transition:transform .2s">
-    💬
-  </button>
-  <div id="chatbot-box" style="display:none;position:absolute;bottom:70px;right:0;width:340px;max-height:460px;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.15);overflow:hidden;border:1px solid #e2e8f0">
-    <div style="background:linear-gradient(135deg,#4f46e5,#9333ea);color:#fff;padding:1rem;display:flex;align-items:center;gap:.6rem">
+<style>
+#chatbot-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+#chatbot-toggle {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #9333ea);
+  color: #fff; border: none; cursor: pointer; font-size: 1.5rem;
+  box-shadow: 0 4px 14px rgba(79,70,229,.4); transition: transform .2s;
+}
+#chatbot-toggle:hover { transform: scale(1.08); }
+#chatbot-box {
+  display: none; position: absolute; bottom: 70px; right: 0;
+  width: 340px; max-height: 460px; background: #fff;
+  border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.15);
+  overflow: hidden; border: 1px solid #e2e8f0;
+  flex-direction: column;
+}
+#chatbot-messages {
+  flex: 1; min-height: 200px; max-height: 300px;
+  overflow-y: auto; padding: 1rem;
+  display: flex; flex-direction: column; gap: .75rem;
+}
+#chatbot-input-row {
+  padding: .75rem; border-top: 1px solid #e2e8f0;
+  display: flex; gap: .5rem;
+}
+#chatbot-input {
+  flex: 1; padding: .55rem .75rem; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; font-size: .85rem; outline: none; min-width: 0;
+}
+#chatbot-input:focus { border-color: #4f46e5; }
+#chatbot-send {
+  background: linear-gradient(135deg, #4f46e5, #9333ea);
+  color: #fff; border: none; border-radius: 10px;
+  padding: .55rem .85rem; cursor: pointer; font-weight: 600; font-size: .85rem;
+  white-space: nowrap;
+}
+.chat-msg-bot {
+  background: #f1f5f9; padding: .65rem .85rem;
+  border-radius: 12px 12px 12px 0; font-size: .85rem;
+  align-self: flex-start; max-width: 85%; word-break: break-word;
+}
+.chat-msg-user {
+  background: #4f46e5; color: #fff; padding: .65rem .85rem;
+  border-radius: 12px 12px 0 12px; font-size: .85rem;
+  align-self: flex-end; max-width: 85%; word-break: break-word;
+}
+@media (max-width: 480px) {
+  #chatbot-widget { bottom: 12px; right: 12px; }
+  #chatbot-box {
+    position: fixed; bottom: 0; right: 0; left: 0;
+    width: 100%; max-height: 80vh; border-radius: 16px 16px 0 0;
+  }
+  #chatbot-messages { max-height: calc(80vh - 140px); padding: .75rem; }
+  #chatbot-toggle { width: 50px; height: 50px; font-size: 1.3rem; }
+}
+</style>
+
+<div id="chatbot-widget">
+  <button id="chatbot-toggle" onclick="toggleChat()">💬</button>
+  <div id="chatbot-box">
+    <div style="background:linear-gradient(135deg,#4f46e5,#9333ea);color:#fff;padding:.85rem 1rem;display:flex;align-items:center;gap:.6rem;flex-shrink:0">
       <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:.9rem">🤖</div>
-      <div>
+      <div style="flex:1">
         <strong style="font-size:.9rem">BuyZenix Assistant</strong>
         <div style="font-size:.7rem;opacity:.8">Powered by NLP</div>
       </div>
+      <button onclick="toggleChat()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:0 4px">&times;</button>
     </div>
-    <div id="chatbot-messages" style="height:300px;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.75rem">
-      <div style="background:#f1f5f9;padding:.65rem .85rem;border-radius:12px 12px 12px 0;font-size:.85rem;align-self:flex-start;max-width:85%">
-        Hi! I'm the BuyZenix assistant. I can help with orders, payments, shipping, products & more. Type <strong>help</strong> for options.
-      </div>
+    <div id="chatbot-messages">
+      <div class="chat-msg-bot">Hi! I'm the BuyZenix assistant. I can help with orders, payments, shipping, products & more. Type <strong>help</strong> for options.</div>
     </div>
-    <div style="padding:.75rem;border-top:1px solid #e2e8f0;display:flex;gap:.5rem">
-      <input type="text" id="chatbot-input" placeholder="Type a message..." style="flex:1;padding:.55rem .75rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.85rem;outline:none" onkeypress="if(event.key==='Enter')sendChat()" />
-      <button onclick="sendChat()" style="background:linear-gradient(135deg,#4f46e5,#9333ea);color:#fff;border:none;border-radius:10px;padding:.55rem .85rem;cursor:pointer;font-weight:600;font-size:.85rem">Send</button>
+    <div id="chatbot-input-row">
+      <input type="text" id="chatbot-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChat()" />
+      <button id="chatbot-send" onclick="sendChat()">Send</button>
     </div>
   </div>
 </div>
+
 <script>
 function toggleChat(){
   var b=document.getElementById('chatbot-box');
-  b.style.display=b.style.display==='none'?'block':'none';
+  b.style.display=b.style.display==='none'||b.style.display===''?'flex':'none';
 }
 function sendChat(){
   var inp=document.getElementById('chatbot-input');
   var msg=inp.value.trim();
   if(!msg)return;
   var box=document.getElementById('chatbot-messages');
-  box.innerHTML+='<div style="background:#4f46e5;color:#fff;padding:.65rem .85rem;border-radius:12px 12px 0 12px;font-size:.85rem;align-self:flex-end;max-width:85%">'+escHtml(msg)+'</div>';
+  box.innerHTML+='<div class="chat-msg-user">'+escHtml(msg)+'</div>';
   inp.value='';
   box.scrollTop=box.scrollHeight;
 
@@ -41,10 +96,10 @@ function sendChat(){
     body: JSON.stringify({message: msg})
   }).then(function(r){return r.json()}).then(function(data){
     var reply = data.reply || 'Sorry, I could not process that.';
-    box.innerHTML+='<div style="background:#f1f5f9;padding:.65rem .85rem;border-radius:12px 12px 12px 0;font-size:.85rem;align-self:flex-start;max-width:85%">'+reply+'</div>';
+    box.innerHTML+='<div class="chat-msg-bot">'+reply+'</div>';
     box.scrollTop=box.scrollHeight;
   }).catch(function(){
-    box.innerHTML+='<div style="background:#f1f5f9;padding:.65rem .85rem;border-radius:12px 12px 12px 0;font-size:.85rem;align-self:flex-start;max-width:85%">Sorry, I\'m having trouble connecting. Please email support@buyzenix.com</div>';
+    box.innerHTML+='<div class="chat-msg-bot">Sorry, I\'m having trouble connecting. Please email support@buyzenix.com</div>';
     box.scrollTop=box.scrollHeight;
   });
 }
