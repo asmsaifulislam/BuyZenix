@@ -366,8 +366,7 @@ select.form-input { cursor: pointer; appearance: auto; }
   margin: 0 0 1rem; letter-spacing: -.03em; line-height: 1.1; color: #fff;
 }
 .hero-banner h1 span {
-  background: linear-gradient(135deg, #eab308, #f97316);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  color: #fff; -webkit-text-fill-color: #fff;
 }
 .hero-banner p { color: #6366f1; font-weight: 500; font-size: 1rem; margin: 0 auto 1.75rem; max-width: 28rem; line-height: 1.6; }
 @media (min-width: 768px) { .hero-banner p { font-size: 1.15rem; margin-bottom: 2rem; } }
