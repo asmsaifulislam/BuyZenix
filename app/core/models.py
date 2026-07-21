@@ -3,12 +3,14 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 
+from .validators import validate_image_file
+
 
 class Category(models.Model):
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to="categories/", blank=True, null=True)
+    image = models.FileField(upload_to="categories/", blank=True, null=True, validators=[validate_image_file])
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -41,7 +43,7 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Discounted price (leave empty for no sale)")
-    image = models.ImageField(upload_to="products/", blank=True, null=True)
+    image = models.FileField(upload_to="products/", blank=True, null=True, validators=[validate_image_file])
     video_url = models.URLField(blank=True, help_text="YouTube or Vimeo video URL")
     model_3d = models.FileField(upload_to="products/3d/", blank=True, null=True, help_text="3D model file (.glb, .gltf) for AR/VR viewing")
     stock = models.PositiveIntegerField(default=0)
@@ -117,7 +119,7 @@ class ProductImage(models.Model):
     product = models.ForeignKey(
         Product, related_name="gallery", on_delete=models.CASCADE
     )
-    image = models.ImageField(upload_to="products/gallery/", blank=True, null=True)
+    image = models.FileField(upload_to="products/gallery/", blank=True, null=True, validators=[validate_image_file])
     color = models.CharField(max_length=20, choices=COLOR_CHOICES, blank=True, default="")
     angle = models.CharField(max_length=20, choices=ANGLE_CHOICES, blank=True, default="front")
     label = models.CharField(max_length=100, blank=True, help_text="Optional label like 'Midnight Blue', 'Matte Finish'")

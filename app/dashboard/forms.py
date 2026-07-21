@@ -23,7 +23,7 @@ class SupplierProductForm(forms.ModelForm):
             "video_url": forms.URLInput(attrs={"class": "form-input", "placeholder": "https://youtube.com/watch?v=..."}),
             "model_3d": forms.ClearableFileInput(attrs={"class": "form-input", "accept": ".glb,.gltf"}),
             "stock": forms.NumberInput(attrs={"class": "form-input"}),
-            "image": forms.ClearableFileInput(attrs={"class": "form-input"}),
+            "image": forms.ClearableFileInput(attrs={"class": "form-input", "accept": "image/*,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp,.heic,.heif,.avif,.svg,.ico,.jfif,.apng"}),
             "available": forms.CheckboxInput(attrs={"class": "form-check"}),
             "featured": forms.CheckboxInput(attrs={"class": "form-check"}),
         }

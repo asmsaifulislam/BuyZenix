@@ -1,5 +1,7 @@
 from django.db import models
 
+from core.validators import validate_image_file
+
 
 class Page(models.Model):
     title = models.CharField(max_length=200)
@@ -19,7 +21,7 @@ class Page(models.Model):
 
 class Banner(models.Model):
     title = models.CharField(max_length=200)
-    image = models.ImageField(upload_to="banners/", blank=True, null=True)
+    image = models.FileField(upload_to="banners/", blank=True, null=True, validators=[validate_image_file])
     link_url = models.URLField(blank=True, help_text="URL to link to when clicked")
     is_active = models.BooleanField(default=True)
     position = models.PositiveIntegerField(default=0, help_text="Display order")
@@ -42,7 +44,7 @@ class SiteSettings(models.Model):
     facebook_url = models.URLField(blank=True)
     twitter_url = models.URLField(blank=True)
     instagram_url = models.URLField(blank=True)
-    logo = models.ImageField(upload_to="site/", blank=True, null=True)
+    logo = models.FileField(upload_to="site/", blank=True, null=True, validators=[validate_image_file])
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
