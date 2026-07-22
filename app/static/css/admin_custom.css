@@ -194,8 +194,8 @@ div.header {
 }
 
 #result_list tr:hover td { background: #f8fafc !important; }
-#result_list a { color: #4f46e5 !important; font-weight: 500 !important; }
-#result_list td a { color: #4f46e5 !important; }
+#result_list a { color: #ffffff !important; font-weight: 500 !important; }
+#result_list td a { color: #ffffff !important; }
 
 #result_list td:first-child,
 #result_list th:first-child {
@@ -389,7 +389,7 @@ button.default:hover, .button:hover {
 .login #header { display: none !important; }
 
 /* ─── Content Links ─── */
-#content a { color: #4f46e5 !important; }
+#content a { color: #ffffff !important; }
 
 /* ─── Search ─── */
 #toolbar {
