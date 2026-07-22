@@ -44,7 +44,7 @@ class SupplierProductForm(forms.ModelForm):
     def save_gallery(self, product, request):
         files = request.FILES.getlist("gallery_images")
         colors = [c.strip() for c in request.POST.get("gallery_colors", "").split(",") if c.strip()]
-        angles = [a.strip() for a in request.POST.get("gallery_angles", "").split(",") if c.strip()]
+        angles = [a.strip() for a in request.POST.get("gallery_angles", "").split(",") if a.strip()]
         labels = [l.strip() for l in request.POST.get("gallery_labels", "").split(",") if l.strip()]
 
         pos = product.gallery.count()
