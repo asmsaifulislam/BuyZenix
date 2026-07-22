@@ -27,6 +27,7 @@ def checkout(request):
                     product=item["product"],
                     price=item["price"],
                     quantity=item["quantity"],
+                    size=item.get("size", ""),
                 )
             cart.clear()
             try:
@@ -121,6 +122,7 @@ def buy_now(request, product_id):
             product=product,
             price=product.price,
             quantity=quantity,
+            size=request.POST.get("size", "").strip(),
         )
         try:
             order_created.delay(order.id)

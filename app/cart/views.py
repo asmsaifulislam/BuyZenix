@@ -13,7 +13,8 @@ def cart_add(request, product_id):
     product = get_object_or_404(Product, id=product_id, available=True)
     quantity = int(request.POST.get("quantity", 1))
     override = request.POST.get("override") == "true"
-    cart.add(product, quantity=quantity, override_quantity=override)
+    size = request.POST.get("size", "").strip()
+    cart.add(product, quantity=quantity, override_quantity=override, size=size)
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return render(request, "cart/cart_dropdown.html", {"cart": cart})
     return redirect("cart:cart_detail")
@@ -23,7 +24,8 @@ def cart_add(request, product_id):
 def cart_remove(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
-    cart.remove(product)
+    size = request.POST.get("size", "").strip()
+    cart.remove(product, size=size)
     return redirect("cart:cart_detail")
 
 

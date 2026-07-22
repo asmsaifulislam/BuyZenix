@@ -24,6 +24,7 @@
             </div>
             <div>
               <strong>{{ item.product.name }}</strong>
+              {% if item.size %}<span style="display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:6px;font-size:.75rem;font-weight:700;margin-left:.35rem;background:#f8fafc">{{ item.size }}</span>{% endif %}
               <div style="color:var(--text-muted);font-size:.85rem">{% money item.price %} × {{ item.quantity }}</div>
               <div style="margin-top:.35rem">
                 <a class="btn btn-outline btn-sm" href="{% url 'core:product_detail' item.product.slug %}">View</a>
@@ -33,6 +34,7 @@
               <div style="font-weight:800">{% money item.total_price %}</div>
               <form action="{% url 'cart:cart_remove' item.product.id %}" method="post" style="margin-top:.5rem">
                 {% csrf_token %}
+                <input type="hidden" name="size" value="{{ item.size|default:'' }}" />
                 <button class="btn btn-outline btn-sm" type="submit">Remove</button>
               </form>
             </div>

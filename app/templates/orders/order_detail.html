@@ -15,7 +15,7 @@
     {% for item in order.items.all %}
       <div class="cart-item" style="flex-wrap:wrap">
         <div style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:.5rem">
-          <strong style="font-size:.9rem">{{ item.product.name }}</strong>
+          <strong style="font-size:.9rem">{{ item.product.name }}{% if item.size %} <span style="display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:6px;font-size:.75rem;font-weight:700;margin-left:.25rem;background:#f8fafc">{{ item.size }}</span>{% endif %}</strong>
           <span style="font-weight:800">{% money item.get_cost %}</span>
         </div>
         <div style="width:100%;color:var(--text-muted);font-size:.85rem">{% money item.price %} × {{ item.quantity }}</div>

@@ -119,11 +119,11 @@
         {% with active_sizes=product.sizes.all %}
         {% if active_sizes %}
         <div style="margin-top:.75rem">
-          <p style="font-size:.8rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">Available Sizes</p>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <p style="font-size:.8rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">Select Size</p>
+          <div id="size-selector" style="display:flex;gap:.5rem;flex-wrap:wrap">
             {% for size in active_sizes %}
               {% if size.is_active %}
-              <span style="display:inline-block;padding:6px 16px;border:2px solid var(--border);border-radius:8px;font-weight:700;font-size:.85rem;color:var(--text);background:#f8fafc;cursor:default;transition:all .15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">{{ size.name }}</span>
+              <button type="button" class="size-btn" data-size="{{ size.name }}" onclick="selectSize(this)" style="display:inline-block;padding:6px 16px;border:2px solid var(--border);border-radius:8px;font-weight:700;font-size:.85rem;color:var(--text);background:#f8fafc;cursor:pointer;transition:all .15s">{{ size.name }}</button>
               {% endif %}
             {% endfor %}
           </div>
@@ -159,6 +159,7 @@
 
         <form class="pd-add-form" action="{% url 'cart:cart_add' product.id %}" method="post">
           {% csrf_token %}
+          <input type="hidden" name="size" id="selected-size" value="" />
           <input type="number" name="quantity" value="1" min="1" max="{{ product.stock|default:10 }}" />
           <button class="btn btn-primary btn-block" type="submit" {% if not product.available %}disabled{% endif %}>
             {% if product.available %}Add to cart{% else %}Unavailable{% endif %}
@@ -167,6 +168,7 @@
 
         <form class="pd-add-form" action="{% url 'orders:buy_now' product.id %}" method="post" style="margin-top:.5rem">
           {% csrf_token %}
+          <input type="hidden" name="size" id="selected-size-buy" value="" />
           <input type="hidden" name="quantity" value="1" />
           <button class="btn btn-block pd-buy-now-btn" type="submit" {% if not product.available %}disabled{% endif %}>
             {% if product.available %}⚡ Buy Now{% else %}Unavailable{% endif %}
@@ -214,6 +216,21 @@
 {% block extra_js %}
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
 <script>
+function selectSize(btn) {
+  document.querySelectorAll('.size-btn').forEach(function(b) {
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--text)';
+    b.style.background = '#f8fafc';
+  });
+  btn.style.borderColor = 'var(--primary)';
+  btn.style.color = '#fff';
+  btn.style.background = 'var(--primary)';
+  var val = btn.getAttribute('data-size');
+  var el1 = document.getElementById('selected-size');
+  var el2 = document.getElementById('selected-size-buy');
+  if (el1) el1.value = val;
+  if (el2) el2.value = val;
+}
 function copyShareUrl() {
   var inp = document.getElementById('shareUrl');
   var msg = document.getElementById('copyMsg');

@@ -16,20 +16,28 @@ class Cart:
             cart = self.session[settings.CART_SESSION_ID] = {}
         self.cart = cart
 
-    def add(self, product, quantity=1, override_quantity=False):
-        product_id = str(product.id)
-        if product_id not in self.cart:
-            self.cart[product_id] = {"quantity": 0, "price": str(product.price)}
+    def _key(self, product, size=""):
+        return f"{product.id}|{size}"
+
+    def add(self, product, quantity=1, override_quantity=False, size=""):
+        key = self._key(product, size)
+        if key not in self.cart:
+            self.cart[key] = {
+                "quantity": 0,
+                "price": str(product.price),
+                "size": size,
+                "product_id": product.id,
+            }
         if override_quantity:
-            self.cart[product_id]["quantity"] = quantity
+            self.cart[key]["quantity"] = quantity
         else:
-            self.cart[product_id]["quantity"] += quantity
+            self.cart[key]["quantity"] += quantity
         self.save()
 
-    def remove(self, product):
-        product_id = str(product.id)
-        if product_id in self.cart:
-            del self.cart[product_id]
+    def remove(self, product, size=""):
+        key = self._key(product, size)
+        if key in self.cart:
+            del self.cart[key]
             self.save()
 
     def clear(self):
@@ -41,15 +49,16 @@ class Cart:
         self.session.modified = True
 
     def __iter__(self):
-        product_ids = self.cart.keys()
+        product_ids = [item.get("product_id") for item in self.cart.values() if item.get("product_id")]
         products = Product.objects.filter(id__in=product_ids)
-        cart = self.cart.copy()
-        for product in products:
-            cart[str(product.id)]["product"] = product
-        for item in cart.values():
-            item["price"] = Decimal(item["price"])
-            item["total_price"] = item["price"] * item["quantity"]
-            yield item
+        product_map = {p.id: p for p in products}
+        for key, item in self.cart.items():
+            pid = item.get("product_id", int(key.split("|")[0]))
+            item["product"] = product_map.get(pid)
+            if item["product"]:
+                item["price"] = Decimal(item["price"])
+                item["total_price"] = item["price"] * item["quantity"]
+                yield item
 
     def __len__(self):
         return sum(item["quantity"] for item in self.cart.values())
