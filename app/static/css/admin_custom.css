@@ -396,8 +396,7 @@ body.model-productimage #changelist,
 body.model-productimage #changelist-form,
 body.model-productimage .results,
 body.model-productimage #result_list,
-body.model-productimage #result_list td,
-body.model-productimage #result_list th {
+body.model-productimage #result_list td {
   background-color: #ffffff !important;
   color: #111827 !important;
 }
