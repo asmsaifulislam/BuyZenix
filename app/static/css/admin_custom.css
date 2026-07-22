@@ -62,7 +62,7 @@ fieldset, .form-row, .field-box,
 .errornote, .errorlist,
 .messagelist, .messagelist li,
 .date, .datetime, .help {
-  color: #111827 !important;
+  color: #bbc1d0 !important;
   border-color: #e2e8f0 !important;
 }
 
@@ -122,7 +122,7 @@ div.header {
   border-bottom: 1px solid #e2e8f0 !important;
   padding: 10px 24px !important;
   font-size: .82rem !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
 }
 
 .breadcrumbs a { color: #111827 !important; text-decoration: none !important; }
@@ -150,7 +150,7 @@ div.header {
 }
 
 #navista a, #nav-global a, #content-related .module a {
-  color: #111827 !important;
+  color: #bbc1d0 !important;
   font-weight: 500 !important;
   padding: 6px 14px !important;
   display: block !important;
@@ -159,7 +159,7 @@ div.header {
 
 #navista a:hover, #nav-global a:hover {
   background: #f8fafc !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
 }
 
 /* ─── Module Cards ─── */
@@ -188,7 +188,7 @@ div.header {
 #result_list td {
   padding: 10px 14px !important;
   font-size: .85rem !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
   background: #fff !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
@@ -206,7 +206,7 @@ div.header {
 #result_list .selected td,
 #result_list tr.selected td {
   background: #eef2ff !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
 }
 
 .object-tools a {
@@ -230,7 +230,7 @@ input[type="url"], input[type="number"], textarea, select,
   border-radius: 10px !important;
   padding: 9px 12px !important;
   font-size: .88rem !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
   background: #fff !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -246,7 +246,7 @@ input:focus, textarea:focus, select:focus {
 label, .label, .form-row label, .fieldBox label {
   font-size: .82rem !important;
   font-weight: 600 !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
 }
 
 /* ─── Buttons ─── */
@@ -398,7 +398,7 @@ body.model-productimage .results,
 body.model-productimage #result_list,
 body.model-productimage #result_list td {
   background-color: #ffffff !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
 }
 body.model-productimage #content a,
 body.model-productimage #result_list a,
@@ -508,7 +508,7 @@ body.model-productimage #result_list td a { font-weight: 500 !important; }
 .bz-link {
   font-size: .8rem;
   font-weight: 600;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
   text-decoration: none !important;
 }
 
@@ -580,7 +580,7 @@ body.model-productimage #result_list td a { font-weight: 500 !important; }
   padding: 20px;
   text-align: center;
   text-decoration: none !important;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
   font-weight: 600;
   font-size: .85rem;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
@@ -591,7 +591,7 @@ body.model-productimage #result_list td a { font-weight: 500 !important; }
   box-shadow: 0 4px 12px rgba(0,0,0,.08);
   transform: translateY(-2px);
   border-color: #111827;
-  color: #111827 !important;
+  color: #bbc1d0 !important;
 }
 
 .bz-quick-icon { font-size: 1.5rem; margin-bottom: 8px; }
