@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from core.models import Category, Product, ProductImage
+from core.models import Category, Product, ProductImage, ProductSize
 from accounts.models import UserProfile
 from .models import Banner, Page, SiteSettings
 
@@ -44,7 +44,7 @@ class SupplierProductForm(forms.ModelForm):
     def save_gallery(self, product, request):
         files = request.FILES.getlist("gallery_images")
         colors = [c.strip() for c in request.POST.get("gallery_colors", "").split(",") if c.strip()]
-        angles = [a.strip() for a in request.POST.get("gallery_angles", "").split(",") if a.strip()]
+        angles = [a.strip() for a in request.POST.get("gallery_angles", "").split(",") if c.strip()]
         labels = [l.strip() for l in request.POST.get("gallery_labels", "").split(",") if l.strip()]
 
         pos = product.gallery.count()
@@ -57,6 +57,23 @@ class SupplierProductForm(forms.ModelForm):
                 label=labels[i] if i < len(labels) else "",
                 position=pos + i,
             )
+
+    def save_sizes(self, product, request):
+        import json
+        raw = request.POST.get("sizes_data", "[]")
+        try:
+            sizes = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            sizes = []
+        ProductSize.objects.filter(product=product).delete()
+        for s in sizes:
+            name = s.get("name", "").strip()
+            if name:
+                ProductSize.objects.create(
+                    product=product,
+                    name=name,
+                    is_active=bool(s.get("active", True)),
+                )
 
 
 class AdminUserForm(forms.ModelForm):

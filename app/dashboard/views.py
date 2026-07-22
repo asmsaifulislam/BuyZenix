@@ -146,11 +146,12 @@ def supplier_product_create(request):
                     counter += 1
             product.save()
             form.save_gallery(product, request)
+            form.save_sizes(product, request)
             messages.success(request, f"Product '{product.name}' created with gallery images.")
             return redirect("dashboard:supplier_products")
     else:
         form = SupplierProductForm()
-    return render(request, "dashboard/supplier_product_form.html", {"form": form, "action": "Create"})
+    return render(request, "dashboard/supplier_product_form.html", {"form": form, "action": "Create", "sizes_json": "[]"})
 
 
 @login_required
@@ -169,13 +170,16 @@ def supplier_product_edit(request, pk):
                 old_image.delete(save=False)
             form.save()
             form.save_gallery(product, request)
+            form.save_sizes(product, request)
             messages.success(request, f"Product '{product.name}' created with gallery images.")
             return redirect("dashboard:supplier_products")
     else:
         form = SupplierProductForm(instance=product)
     gallery = product.gallery.all()
+    import json
+    sizes_json = json.dumps([{"name": s.name, "active": s.is_active} for s in product.sizes.all()])
     return render(request, "dashboard/supplier_product_form.html", {
-        "form": form, "action": "Edit", "product": product, "gallery": gallery,
+        "form": form, "action": "Edit", "product": product, "gallery": gallery, "sizes_json": sizes_json,
     })
 
 
@@ -808,11 +812,12 @@ def admin_product_create(request):
                     counter += 1
             product.save()
             form.save_gallery(product, request)
+            form.save_sizes(product, request)
             messages.success(request, f"Product '{product.name}' created.")
             return redirect("dashboard:admin_products")
     else:
         form = SupplierProductForm()
-    return render(request, "dashboard/admin_product_form.html", {"form": form, "action": "Create"})
+    return render(request, "dashboard/admin_product_form.html", {"form": form, "action": "Create", "sizes_json": "[]"})
 
 
 @staff_member_required
@@ -832,13 +837,16 @@ def admin_product_edit(request, pk):
                 old_image.delete(save=False)
             form.save()
             form.save_gallery(product, request)
+            form.save_sizes(product, request)
             messages.success(request, f"Product '{product.name}' updated.")
             return redirect("dashboard:admin_products")
     else:
         form = SupplierProductForm(instance=product)
     gallery = product.gallery.all()
+    import json
+    sizes_json = json.dumps([{"name": s.name, "active": s.is_active} for s in product.sizes.all()])
     return render(request, "dashboard/admin_product_form.html", {
-        "form": form, "action": "Edit", "product": product, "gallery": gallery,
+        "form": form, "action": "Edit", "product": product, "gallery": gallery, "sizes_json": sizes_json,
     })
 
 

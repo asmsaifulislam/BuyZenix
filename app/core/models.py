@@ -88,6 +88,18 @@ class Product(models.Model):
         return self.name
 
 
+class ProductSize(models.Model):
+    product = models.ForeignKey(Product, related_name="sizes", on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    is_active = models.BooleanField(default=True, help_text="Mark to display this size on the product page")
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.product.name} - {self.name}"
+
+
 class ProductImage(models.Model):
     COLOR_CHOICES = [
         ("", "No Color"),

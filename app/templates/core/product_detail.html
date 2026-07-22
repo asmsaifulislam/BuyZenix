@@ -115,6 +115,21 @@
             <span class="badge badge-danger">Out of stock</span>
           {% endif %}
         </p>
+
+        {% with active_sizes=product.sizes.all %}
+        {% if active_sizes %}
+        <div style="margin-top:.75rem">
+          <p style="font-size:.8rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">Available Sizes</p>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            {% for size in active_sizes %}
+              {% if size.is_active %}
+              <span style="display:inline-block;padding:6px 16px;border:2px solid var(--border);border-radius:8px;font-weight:700;font-size:.85rem;color:var(--text);background:#f8fafc;cursor:default;transition:all .15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">{{ size.name }}</span>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% endwith %}
         {% if product.supplier %}
         <p style="color:var(--text-muted);font-size:.85rem;margin-top:.25rem">Sold by: <strong>{{ product.supplier.username }}</strong></p>
         {% endif %}
