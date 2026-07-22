@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -39,8 +41,8 @@ def cart_detail(request):
         item["update_quantity_form"] = None
 
     subtotal = sum(item["price"] * item["quantity"] for item in cart)
-    discount = float(coupon_discount)
-    total = max(subtotal - discount, 0)
+    discount = Decimal(str(coupon_discount))
+    total = max(subtotal - discount, Decimal("0"))
 
     return render(request, "cart/cart_detail.html", {
         "cart": cart,
