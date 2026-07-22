@@ -38,7 +38,7 @@ body { color-scheme: light only !important; }
   --default-button-hover-bg: #4338ca;
   --close-button-bg: #dc2626;
   --close-button-hover-bg: #b91c1c;
-  --link-fg: #4f46e5;
+  --link-fg: #111827;
   --link-hover-color: #4338ca;
   --link-selected-color: #4338ca;
   --border-color: #e2e8f0;
@@ -125,7 +125,7 @@ div.header {
   color: #111827 !important;
 }
 
-.breadcrumbs a { color: #4f46e5 !important; text-decoration: none !important; }
+.breadcrumbs a { color: #111827 !important; text-decoration: none !important; }
 .breadcrumbs .current { color: #111827 !important; font-weight: 600 !important; }
 
 /* ─── Sidebar Modules ─── */
@@ -159,7 +159,7 @@ div.header {
 
 #navista a:hover, #nav-global a:hover {
   background: #f8fafc !important;
-  color: #4f46e5 !important;
+  color: #111827 !important;
 }
 
 /* ─── Module Cards ─── */
@@ -194,8 +194,8 @@ div.header {
 }
 
 #result_list tr:hover td { background: #f8fafc !important; }
-#result_list a { color: #ffffff !important; font-weight: 500 !important; }
-#result_list td a { color: #ffffff !important; }
+#result_list a { color: #111827 !important; font-weight: 500 !important; }
+#result_list td a { color: #111827 !important; }
 
 #result_list td:first-child,
 #result_list th:first-child {
@@ -337,7 +337,7 @@ button.default:hover, .button:hover {
   margin-top: 1rem !important;
 }
 
-.paginator a { color: #4f46e5 !important; font-weight: 600 !important; padding: 4px 10px !important; border-radius: 6px !important; }
+.paginator a { color: #111827 !important; font-weight: 600 !important; padding: 4px 10px !important; border-radius: 6px !important; }
 .paginator a:hover { background: #eef2ff !important; }
 .paginator .this-page { background: linear-gradient(135deg, #4f46e5, #9333ea) !important; color: #fff !important; border-radius: 6px !important; font-weight: 700 !important; }
 
@@ -356,7 +356,7 @@ button.default:hover, .button:hover {
 }
 
 #changelist-filter a { color: #111827 !important; }
-#changelist-filter a:hover { background: #f8fafc !important; color: #4f46e5 !important; }
+#changelist-filter a:hover { background: #f8fafc !important; color: #111827 !important; }
 #changelist-filter .selected { background: #4f46e5 !important; color: #fff !important; border-radius: 6px !important; }
 
 /* ─── Login ─── */
@@ -389,7 +389,7 @@ button.default:hover, .button:hover {
 .login #header { display: none !important; }
 
 /* ─── Content Links ─── */
-#content a { color: #ffffff !important; }
+#content a { color: #111827 !important; }
 
 /* ─── Search ─── */
 #toolbar {
@@ -490,7 +490,7 @@ button.default:hover, .button:hover {
 .bz-link {
   font-size: .8rem;
   font-weight: 600;
-  color: #4f46e5 !important;
+  color: #111827 !important;
   text-decoration: none !important;
 }
 
@@ -572,8 +572,8 @@ button.default:hover, .button:hover {
 .bz-quick-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,.08);
   transform: translateY(-2px);
-  border-color: #4f46e5;
-  color: #4f46e5 !important;
+  border-color: #111827;
+  color: #111827 !important;
 }
 
 .bz-quick-icon { font-size: 1.5rem; margin-bottom: 8px; }
