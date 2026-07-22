@@ -220,9 +220,9 @@ def _reply_coupons():
 
     now = timezone.now()
     active = Coupon.objects.filter(
-        is_active=True,
         Q(valid_from__lte=now) | Q(valid_from__isnull=True),
         Q(valid_to__gte=now) | Q(valid_to__isnull=True),
+        is_active=True,
     )
     active = [c for c in active if c.max_uses == 0 or c.used_count < c.max_uses]
 
