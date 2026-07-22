@@ -391,6 +391,13 @@ button.default:hover, .button:hover {
 /* ─── Content Links ─── */
 #content a { color: #111827 !important; }
 body.model-productimage #content a { color: #eceef4 !important; }
+body.model-productimage #result_list a,
+body.model-productimage #result_list td a,
+body.model-productimage .paginator a,
+body.model-productimage .breadcrumbs a {
+  color: #eceef4 !important;
+}
+body.model-productimage #result_list td a { font-weight: 500 !important; }
 
 /* ─── Search ─── */
 #toolbar {
