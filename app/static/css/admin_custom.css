@@ -390,7 +390,18 @@ button.default:hover, .button:hover {
 
 /* ─── Content Links ─── */
 #content a { color: #111827 !important; }
-body.model-productimage #content a { color: #111827 !important; }
+body.model-productimage #content,
+body.model-productimage #content-main,
+body.model-productimage #changelist,
+body.model-productimage #changelist-form,
+body.model-productimage .results,
+body.model-productimage #result_list,
+body.model-productimage #result_list td,
+body.model-productimage #result_list th {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+body.model-productimage #content a,
 body.model-productimage #result_list a,
 body.model-productimage #result_list td a,
 body.model-productimage .paginator a,
