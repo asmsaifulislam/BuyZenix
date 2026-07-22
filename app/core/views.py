@@ -113,9 +113,25 @@ def _parse_description(text):
 def product_detail(request, slug):
     product = get_object_or_404(Product, slug=slug, available=True)
     gallery = product.gallery.all()
-    related = Product.objects.filter(category=product.category, available=True).exclude(
-        id=product.id
-    )[:4]
+
+    stop_words = {"for", "the", "a", "an", "and", "or", "with", "in", "on", "at", "to", "of", "by", "is", "it", "from", "no", "not", "pro", "plus", "max", "new", "old"}
+    words = [w for w in product.name.lower().split() if len(w) > 1 and w not in stop_words]
+
+    from django.db.models import Q, Sum, Case, When, IntegerField
+    q = Q()
+    for w in words:
+        q |= Q(name__icontains=w)
+    conditions = [When(name__icontains=w, then=1) for w in words]
+    related = (
+        Product.objects.filter(q, available=True)
+        .exclude(id=product.id)
+        .exclude(name__iexact=product.name)
+        .annotate(
+            match_count=Sum(Case(*conditions, default=0, output_field=IntegerField()))
+        )
+        .order_by("-match_count")[:4]
+    )
+
     spec_lines, warranty_info = _parse_description(product.description)
     return render(
         request,
