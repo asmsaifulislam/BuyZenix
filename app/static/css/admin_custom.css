@@ -390,6 +390,7 @@ button.default:hover, .button:hover {
 
 /* ─── Content Links ─── */
 #content a { color: #111827 !important; }
+body.model-productimage #content a { color: #eceef4 !important; }
 
 /* ─── Search ─── */
 #toolbar {
