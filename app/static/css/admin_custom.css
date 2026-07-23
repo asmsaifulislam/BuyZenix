@@ -46,25 +46,28 @@ body { color-scheme: light only !important; }
   --selected-bg: #eef2ff;
   --selected-row: #eef2ff;
   --error-fg: #dc2626;
+  --object-tools-fg: #ffffff;
+  --object-tools-bg: #4f46e5;
 }
 
-/* ─── NUCLEAR: Force all text dark on all elements ─── */
-body, #container, #content, #content-main, #changelist,
-#changelist-form, .results, #result_list,
-h1, h2, h3, h4, h5, h6,
-p, span, div, li, td, th, label, a, dt, dd, strong, em,
+/* ─── Global text color (override dark mode) ─── */
+body { color: #111827 !important; }
+h1, h2, h3, h4, h5, h6 { color: #111827 !important; }
+p, span, div, li, td, th, label, dt, dd, strong, em,
 caption, legend, code, pre, blockquote,
-input, textarea, select, button,
 .module, .inline-group, .grp-group,
 fieldset, .form-row, .field-box,
-#toolbar, .paginator, #changelist-filter,
-.breadcrumbs, .object-tools, .submit-row,
 .errornote, .errorlist,
 .messagelist, .messagelist li,
-.date, .datetime, .help {
-  color: #bbc1d0 !important;
-  border-color: #e2e8f0 !important;
-}
+.date, .datetime, .help { color: #111827 !important; }
+
+/* ─── Global borders ─── */
+body, #container, #content, #content-main, #changelist,
+#changelist-form, .results, #result_list,
+table, td, th, fieldset, .form-row, .field-box,
+.module, .inline-group, .submit-row,
+#toolbar, .paginator, #changelist-filter,
+.breadcrumbs, .object-tools { border-color: #e2e8f0 !important; }
 
 /* ─── Base ─── */
 * { box-sizing: border-box; }
@@ -75,6 +78,7 @@ body, #container {
 }
 
 #content { padding: 24px !important; }
+#content-main { padding: 0 !important; }
 
 /* ─── Header ─── */
 #header {
@@ -125,10 +129,11 @@ div.header {
   border-bottom: 1px solid #e2e8f0 !important;
   padding: 10px 24px !important;
   font-size: .82rem !important;
-  color: #bbc1d0 !important;
+  color: #6b7280 !important;
 }
 
-.breadcrumbs a { color: #111827 !important; text-decoration: none !important; }
+.breadcrumbs a { color: #4f46e5 !important; text-decoration: none !important; }
+.breadcrumbs a:hover { color: #4338ca !important; text-decoration: underline !important; }
 .breadcrumbs .current { color: #111827 !important; font-weight: 600 !important; }
 
 /* ─── Sidebar Modules ─── */
@@ -153,7 +158,7 @@ div.header {
 }
 
 #navista a, #nav-global a, #content-related .module a {
-  color: #bbc1d0 !important;
+  color: #4f46e5 !important;
   font-weight: 500 !important;
   padding: 6px 14px !important;
   display: block !important;
@@ -161,8 +166,8 @@ div.header {
 }
 
 #navista a:hover, #nav-global a:hover {
-  background: #f8fafc !important;
-  color: #bbc1d0 !important;
+  background: #eef2ff !important;
+  color: #4338ca !important;
 }
 
 /* ─── Module Cards ─── */
@@ -175,30 +180,43 @@ div.header {
   margin-bottom: 1rem !important;
 }
 
+/* ─── Content header ─── */
+#content-header {
+  margin-bottom: 16px !important;
+}
+
+#content-header h1 {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  margin: 0 !important;
+}
+
 /* ─── Tables ─── */
 #result_list th {
-  background: #f8fafc !important;
-  color: #6b7280 !important;
+  background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
+  color: #ffffff !important;
   font-size: .72rem !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: .05em !important;
   padding: 10px 14px !important;
-  border-bottom: 1px solid #e2e8f0 !important;
   border: none !important;
 }
+
+#result_list th a { color: #ffffff !important; }
 
 #result_list td {
   padding: 10px 14px !important;
   font-size: .85rem !important;
-  color: #bbc1d0 !important;
+  color: #111827 !important;
   background: #fff !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
 
 #result_list tr:hover td { background: #f8fafc !important; }
-#result_list a { color: #111827 !important; font-weight: 500 !important; }
-#result_list td a { color: #111827 !important; }
+#result_list a { color: #4f46e5 !important; font-weight: 500 !important; text-decoration: none !important; }
+#result_list a:hover { color: #4338ca !important; text-decoration: underline !important; }
 
 #result_list td:first-child,
 #result_list th:first-child {
@@ -209,21 +227,48 @@ div.header {
 #result_list .selected td,
 #result_list tr.selected td {
   background: #eef2ff !important;
-  color: #bbc1d0 !important;
 }
 
-.object-tools a {
+/* ─── Object Tools (Add buttons) ─── */
+.object-tools {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.object-tools li { list-style: none !important; }
+
+.object-tools a,
+.object-tools a.addlink,
+.object-tools a.addlink:link,
+.object-tools a.addlink:visited,
+.object-tools a.viewsitelink,
+.object-tools a.viewsitelink:link,
+.object-tools a.viewsitelink:visited,
+.addlink {
   background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
-  color: #fff !important;
+  color: #ffffff !important;
   border-radius: 8px !important;
-  padding: 7px 14px !important;
+  padding: 8px 16px !important;
   font-weight: 600 !important;
+  font-size: .82rem !important;
   text-decoration: none !important;
+  border: none !important;
+  display: inline-block !important;
+  transition: all .15s !important;
 }
 
-.object-tools a:hover {
+.object-tools a:hover,
+.object-tools a.addlink:hover,
+.addlink:hover,
+.object-tools a.viewsitelink:hover {
   box-shadow: 0 4px 12px rgba(79,70,229,.3) !important;
+  transform: translateY(-1px) !important;
 }
+
+.deletelink { color: #dc2626 !important; font-weight: 500 !important; }
 
 /* ─── Forms ─── */
 input[type="text"], input[type="email"], input[type="password"],
@@ -233,7 +278,7 @@ input[type="url"], input[type="number"], textarea, select,
   border-radius: 10px !important;
   padding: 9px 12px !important;
   font-size: .88rem !important;
-  color: #bbc1d0 !important;
+  color: #111827 !important;
   background: #fff !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -249,14 +294,19 @@ input:focus, textarea:focus, select:focus {
 label, .label, .form-row label, .fieldBox label {
   font-size: .82rem !important;
   font-weight: 600 !important;
-  color: #bbc1d0 !important;
+  color: #111827 !important;
 }
 
-/* ─── Buttons ─── */
-input[type="submit"], .submit-row input[type="submit"],
-button.default, .button {
+/* ─── ALL Buttons — white text always ─── */
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+button,
+.default,
+.submit-row input[type="submit"],
+.submit-row input[type="button"] {
   background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
-  color: #fff !important;
+  color: #ffffff !important;
   border: none !important;
   border-radius: 8px !important;
   padding: 9px 20px !important;
@@ -267,10 +317,28 @@ button.default, .button {
   transition: all .15s !important;
 }
 
-input[type="submit"]:hover, .submit-row input[type="submit"]:hover,
-button.default:hover, .button:hover {
+input[type="submit"]:hover,
+input[type="button"]:hover,
+input[type="reset"]:hover,
+button:hover,
+.default:hover,
+.submit-row input[type="submit"]:hover,
+.submit-row input[type="button"]:hover {
   box-shadow: 0 4px 12px rgba(79,70,229,.3) !important;
   transform: translateY(-1px) !important;
+}
+
+/* Go button in changelist actions */
+.actions input[type="submit"],
+.module .actions input[type="submit"],
+#action-toggle + label {
+  background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
 }
 
 .submit-row { background: #f8fafc !important; border-top: 1px solid #e2e8f0 !important; }
@@ -283,27 +351,39 @@ button.default:hover, .button:hover {
   font-weight: 600 !important;
 }
 
-/* ─── Links ─── */
-.addlink,
-.object-tools a.addlink,
-.object-tools a.addlink:link,
-.object-tools a.addlink:visited {
-  background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
-  color: #ffffff !important;
-  border-radius: 6px !important;
-  padding: 3px 10px !important;
-  font-size: .78rem !important;
-  font-weight: 600 !important;
+/* ─── Changelist Form ─── */
+#changelist-form {
+  background: #fff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
 }
 
-.deletelink { color: #dc2626 !important; font-weight: 500 !important; }
+.changelist-form-container {
+  padding: 0 !important;
+}
 
-.object-tools a {
-  background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
-  color: #fff !important;
-  border-radius: 6px !important;
-  padding: 7px 14px !important;
+/* ─── Actions bar ─── */
+.actions {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  margin-bottom: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.actions label {
+  color: #111827 !important;
   font-weight: 600 !important;
+  font-size: .82rem !important;
+}
+
+.actions select {
+  width: auto !important;
+  max-width: 300px !important;
 }
 
 /* ─── Messages ─── */
@@ -341,11 +421,12 @@ button.default:hover, .button:hover {
   border-radius: 10px !important;
   padding: 10px 16px !important;
   margin-top: 1rem !important;
+  color: #111827 !important;
 }
 
-.paginator a { color: #111827 !important; font-weight: 600 !important; padding: 4px 10px !important; border-radius: 6px !important; }
+.paginator a { color: #4f46e5 !important; font-weight: 600 !important; padding: 4px 10px !important; border-radius: 6px !important; text-decoration: none !important; }
 .paginator a:hover { background: #eef2ff !important; }
-.paginator .this-page { background: linear-gradient(135deg, #4f46e5, #9333ea) !important; color: #fff !important; border-radius: 6px !important; font-weight: 700 !important; }
+.paginator .this-page { background: linear-gradient(135deg, #4f46e5, #9333ea) !important; color: #fff !important; border-radius: 6px !important; font-weight: 700 !important; padding: 4px 10px !important; }
 
 /* ─── Filter Sidebar ─── */
 #changelist-filter {
@@ -361,8 +442,8 @@ button.default:hover, .button:hover {
   border-radius: 8px 8px 0 0 !important;
 }
 
-#changelist-filter a { color: #111827 !important; }
-#changelist-filter a:hover { background: #f8fafc !important; color: #111827 !important; }
+#changelist-filter a { color: #4f46e5 !important; }
+#changelist-filter a:hover { background: #eef2ff !important; color: #4338ca !important; }
 #changelist-filter .selected { background: #4f46e5 !important; color: #fff !important; border-radius: 6px !important; }
 
 /* ─── Login ─── */
@@ -395,7 +476,10 @@ button.default:hover, .button:hover {
 .login #header { display: none !important; }
 
 /* ─── Content Links ─── */
-#content a { color: #111827 !important; }
+#content a { color: #4f46e5 !important; text-decoration: none !important; }
+#content a:hover { color: #4338ca !important; text-decoration: underline !important; }
+
+/* ─── ProductImage page specific ─── */
 body.model-productimage #content,
 body.model-productimage #content-main,
 body.model-productimage #changelist,
@@ -404,16 +488,15 @@ body.model-productimage .results,
 body.model-productimage #result_list,
 body.model-productimage #result_list td {
   background-color: #ffffff !important;
-  color: #bbc1d0 !important;
+  color: #111827 !important;
 }
 body.model-productimage #content a,
 body.model-productimage #result_list a,
 body.model-productimage #result_list td a,
 body.model-productimage .paginator a,
 body.model-productimage .breadcrumbs a {
-  color: #111827 !important;
+  color: #4f46e5 !important;
 }
-body.model-productimage #result_list td a { font-weight: 500 !important; }
 
 /* ─── Search ─── */
 #toolbar {
@@ -422,6 +505,78 @@ body.model-productimage #result_list td a { font-weight: 500 !important; }
   border-radius: 10px !important;
   padding: 12px 16px !important;
   margin-bottom: 1rem !important;
+}
+
+#changelist-search {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* ─── Checkbox / select fix ─── */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: #4f46e5 !important;
+}
+
+/* ─── Admin index quick grid ─── */
+.app-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 16px !important;
+  padding: 0 !important;
+}
+
+.app-list .module {
+  margin-bottom: 0 !important;
+}
+
+.app-list .module h2 {
+  padding: 14px 18px !important;
+  font-size: .78rem !important;
+}
+
+.app-list .module table {
+  width: 100% !important;
+}
+
+.app-list .module table th {
+  padding: 10px 14px !important;
+  text-align: left !important;
+  font-size: .72rem !important;
+}
+
+.app-list .module table td {
+  padding: 8px 14px !important;
+  font-size: .85rem !important;
+}
+
+.app-list .module table td a {
+  color: #4f46e5 !important;
+  font-weight: 500 !important;
+}
+
+.app-list .module table td a:hover {
+  color: #4338ca !important;
+}
+
+/* ─── Recent actions ─── */
+#content-main .module .module caption,
+#content-main .module h2 {
+  background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
+  color: #fff !important;
+  padding: 12px 18px !important;
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .04em !important;
+}
+
+/* ─── Footer ─── */
+#footer {
+  padding: 16px 24px !important;
+  text-align: center !important;
+  font-size: .75rem !important;
+  color: #6b7280 !important;
 }
 
 /* ═══════════════════════════════════════════════
@@ -514,9 +669,11 @@ body.model-productimage #result_list td a { font-weight: 500 !important; }
 .bz-link {
   font-size: .8rem;
   font-weight: 600;
-  color: #bbc1d0 !important;
+  color: #4f46e5 !important;
   text-decoration: none !important;
 }
+
+.bz-link:hover { color: #4338ca !important; }
 
 .bz-card-body { padding: 20px; }
 
@@ -586,7 +743,7 @@ body.model-productimage #result_list td a { font-weight: 500 !important; }
   padding: 20px;
   text-align: center;
   text-decoration: none !important;
-  color: #bbc1d0 !important;
+  color: #111827 !important;
   font-weight: 600;
   font-size: .85rem;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
@@ -596,8 +753,8 @@ body.model-productimage #result_list td a { font-weight: 500 !important; }
 .bz-quick-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,.08);
   transform: translateY(-2px);
-  border-color: #111827;
-  color: #bbc1d0 !important;
+  border-color: #4f46e5;
+  color: #4f46e5 !important;
 }
 
 .bz-quick-icon { font-size: 1.5rem; margin-bottom: 8px; }
