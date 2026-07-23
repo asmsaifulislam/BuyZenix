@@ -66,10 +66,15 @@
           {% endif %}
         </div>
         {% if gallery %}
-        <div style="display:flex;gap:.5rem;margin-top:.75rem;overflow-x:auto">
+        <div id="gallery-thumbnails" style="display:flex;gap:.5rem;margin-top:.75rem;overflow-x:auto">
           {% for img in gallery %}
             {% if img.image %}
-            <img src="{{ img.image.url }}" alt="" loading="lazy" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid var(--border);flex-shrink:0;cursor:pointer" onclick="document.querySelector('.pd-grid .product-thumb img').src=this.src" />
+            <img src="{{ img.image.url }}" alt="" loading="lazy"
+              data-color="{{ img.color|default:'' }}"
+              data-size="{{ img.size.name|default:'' }}"
+              class="gallery-thumb{% if not img.color and not img.size %} gallery-thumb-active{% endif %}"
+              style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid var(--border);flex-shrink:0;cursor:pointer;transition:all .15s"
+              onclick="selectGalleryImage(this)" />
             {% endif %}
           {% endfor %}
         </div>
@@ -148,6 +153,20 @@
         </div>
         {% endif %}
         {% endwith %}
+
+        {% if colors %}
+        <div style="margin-top:.75rem">
+          <p style="font-size:.8rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em">Select Color</p>
+          <div id="color-selector" style="display:flex;gap:.5rem;flex-wrap:wrap">
+            {% for color in colors %}
+            <button type="button" class="color-btn" data-color="{{ color }}" onclick="selectColor(this)" style="display:inline-flex;align-items:center;gap:.35rem;padding:6px 14px;border:2px solid var(--border);border-radius:8px;font-weight:700;font-size:.85rem;color:var(--text);background:#f8fafc;cursor:pointer;transition:all .15s">
+              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(0,0,0,.15);background:{{ color }}" {% if color == "white" %}style="border-color:rgba(0,0,0,.2)"{% endif %}></span>
+              {{ color|title }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
         {% if product.supplier %}
         <p style="color:var(--text-muted);font-size:.85rem;margin-top:.25rem">Sold by: <strong>{{ product.supplier.username }}</strong></p>
         {% endif %}
@@ -305,6 +324,50 @@ function selectSize(btn) {
   var el2 = document.getElementById('selected-size-buy');
   if (el1) el1.value = val;
   if (el2) el2.value = val;
+  filterGallery();
+}
+var selectedColor = '';
+function selectColor(btn) {
+  document.querySelectorAll('.color-btn').forEach(function(b) {
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--text)';
+    b.style.background = '#f8fafc';
+  });
+  btn.style.borderColor = 'var(--primary)';
+  btn.style.color = '#fff';
+  btn.style.background = 'var(--primary)';
+  selectedColor = btn.getAttribute('data-color');
+  filterGallery();
+}
+function filterGallery() {
+  var thumbContainer = document.getElementById('gallery-thumbnails');
+  if (!thumbContainer) return;
+  var thumbs = thumbContainer.querySelectorAll('.gallery-thumb');
+  var activeSize = '';
+  var sizeBtn = document.querySelector('.size-btn[style*="background: var(--primary)"], .size-btn[style*="background:var(--primary)"]');
+  if (sizeBtn) activeSize = sizeBtn.getAttribute('data-size');
+  var firstVisible = null;
+  thumbs.forEach(function(t) {
+    var tColor = t.getAttribute('data-color');
+    var tSize = t.getAttribute('data-size');
+    var matchColor = !selectedColor || !tColor || tColor === selectedColor;
+    var matchSize = !activeSize || !tSize || tSize === activeSize;
+    if (matchColor && matchSize) {
+      t.style.display = '';
+      if (!firstVisible) firstVisible = t;
+    } else {
+      t.style.display = 'none';
+    }
+  });
+  if (firstVisible) selectGalleryImage(firstVisible);
+}
+function selectGalleryImage(thumb) {
+  var mainImg = document.querySelector('.pd-grid .product-thumb img');
+  if (mainImg && thumb.src) mainImg.src = thumb.src;
+  document.querySelectorAll('.gallery-thumb').forEach(function(t) {
+    t.style.borderColor = 'var(--border)';
+  });
+  thumb.style.borderColor = 'var(--primary)';
 }
 function copyShareUrl() {
   var inp = document.getElementById('shareUrl');

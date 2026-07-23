@@ -137,6 +137,7 @@ class ProductImage(models.Model):
     )
     image = models.FileField(upload_to="products/gallery/", blank=True, null=True, validators=[validate_image_file])
     color = models.CharField(max_length=20, choices=COLOR_CHOICES, blank=True, default="")
+    size = models.ForeignKey("ProductSize", null=True, blank=True, on_delete=models.SET_NULL, related_name="images", help_text="Link image to a specific size (optional)")
     angle = models.CharField(max_length=20, choices=ANGLE_CHOICES, blank=True, default="front")
     label = models.CharField(max_length=100, blank=True, help_text="Optional label like 'Midnight Blue', 'Matte Finish'")
     position = models.PositiveIntegerField(default=0, help_text="Display order")

@@ -150,6 +150,17 @@ def product_detail(request, slug):
             return redirect("core:product_detail", slug=redirect_obj.new_product.slug)
         raise
     gallery = product.gallery.all()
+    colors = sorted(set(img.color for img in gallery if img.color))
+    gallery_data = []
+    for img in gallery:
+        gallery_data.append({
+            "url": img.image.url if img.image else "",
+            "color": img.color or "",
+            "size": img.size.name if img.size else "",
+            "angle": img.angle or "",
+            "label": img.label or "",
+            "position": img.position,
+        })
 
     stop_words = {"for", "the", "a", "an", "and", "or", "with", "in", "on", "at", "to", "of", "by", "is", "it", "from", "no", "not", "pro", "plus", "max", "new", "old"}
     words = [w for w in product.name.lower().split() if len(w) > 1 and w not in stop_words]
@@ -195,6 +206,7 @@ def product_detail(request, slug):
         request,
         "core/product_detail.html",
         {"product": product, "related": related, "gallery": gallery,
+         "colors": colors, "gallery_data": gallery_data,
          "spec_lines": spec_lines, "warranty_info": warranty_info,
          "reviews": reviews, "avg_rating": round(avg_rating, 1),
          "review_count": review_count, "is_wishlisted": is_wishlisted,

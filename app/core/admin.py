@@ -17,6 +17,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 0
+    fields = ["image", "color", "size", "angle", "label", "position"]
 
 
 class ProductSizeInline(admin.TabularInline):
