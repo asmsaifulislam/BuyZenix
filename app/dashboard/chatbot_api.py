@@ -1,5 +1,6 @@
 import json
 import re
+from difflib import SequenceMatcher
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -7,10 +8,28 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Avg, Min, Max, Count
 
 
+def _fuzzy_match(word, target, threshold=0.7):
+    """Check if word is close to target (handles typos)."""
+    if word == target:
+        return True
+    if target.startswith(word) or word.startswith(target[:3]):
+        return True
+    return SequenceMatcher(None, word, target).ratio() >= threshold
+
+
+def _contains_any(msg, words):
+    """Check if message contains any of the words (with typo tolerance)."""
+    for w in words:
+        if re.search(r'\b' + re.escape(w[:3]) + r'\w*\b', msg):
+            return True
+    return False
+
+
 # ─── Intent detection ───
 
 def _detect_intent(msg):
     m = msg.lower().strip()
+    m_clean = re.sub(r'[^\w\s]', ' ', m)
 
     if re.search(r'\b(hi|hello|hey|assalam|namaste|good\s*(morning|afternoon|evening)|yo|sup)\b', m):
         return "greeting"
@@ -47,7 +66,7 @@ def _detect_intent(msg):
     if re.search(r'\b(price|cost|how\s*much|taka|bdt|৳|\$)\b', m):
         return "price"
 
-    # ── Specific product search (must come before general product intent) ──
+    # ── Specific product search ──
     if re.search(r'\b(search|find|look|show)\b', m):
         return "search"
 
@@ -59,13 +78,15 @@ def _detect_intent(msg):
     if re.search(r'\b(sale|discount|offer|promo|coupon|code|off|deal|cheap)\b', m):
         return "coupons"
 
-    # ── Featured / popular / trending ──
-    if re.search(r'\b(feature|popular|best|top|recommend|trending|trending)\b', m):
-        return "featured"
+    # ── New / latest (typo-tolerant: "nre", "nw", "neww", "taday", "todat") ──
+    new_words = ['new', 'latest', 'recent', 'arrivals', 'newest', 'nre', 'nw', 'neww', 'nwe', 'just', 'taday', 'todat', 'today']
+    for w in new_words:
+        if re.search(r'\b' + re.escape(w) + r'\w*\b', m_clean):
+            return "latest"
 
-    # ── New / latest ──
-    if re.search(r'\b(new|latest|recent|arrivals?|newest)\b', m):
-        return "latest"
+    # ── Featured / popular / trending ──
+    if re.search(r'\b(feature|popular|best|top|recommend|trending|trend)\b', m):
+        return "featured"
 
     # ── Categories ──
     if re.search(r'\b(categor|cat|type|group|section|what\s*do\s*you\s*have)\b', m):
@@ -359,11 +380,15 @@ def _reply_products(msg):
             cat_filter = c
             break
 
-    # Extract meaningful keywords
+    # Extract meaningful keywords (filter out filler words)
     words = [w for w in _re.findall(r'\b\w+\b', m) if len(w) > 2]
     skip = {'product', 'item', 'sell', 'available', 'stock', 'what', 'do', 'have',
             'is', 'catalog', 'shop', 'browse', 'tell', 'show', 'give', 'your',
-            'the', 'some', 'any', 'all', 'with', 'for', 'and', 'products', 'things'}
+            'the', 'some', 'any', 'all', 'with', 'for', 'and', 'products', 'things',
+            'today', 'taday', 'todat', 'new', 'nre', 'nw', 'just', 'any', 'there',
+            'something', 'really', 'actually', 'like', 'want', 'need', 'looking',
+            'that', 'this', 'those', 'these', 'can', 'you', 'me', 'about', 'from',
+            'please', 'could', 'would', 'also', 'only', 'still'}
     keywords = [w for w in words if w not in skip]
 
     qs = Product.objects.filter(available=True)
@@ -534,7 +559,8 @@ def _reply_unknown(msg):
     # Product name search fallback
     words = [w for w in re.findall(r'\b\w+\b', msg.lower().strip('?!.') if isinstance(msg, str) else '') if len(w) > 2]
     skip = {'how', 'many', 'much', 'what', 'can', 'you', 'tell', 'give', 'show',
-            'about', 'the', 'are', 'there', 'any', 'some', 'all', 'name', 'list'}
+            'about', 'the', 'are', 'there', 'any', 'some', 'all', 'name', 'list',
+            'today', 'have', 'taday', 'nre', 'just', 'there', 'something'}
     keywords = [w for w in words if w not in skip]
 
     if keywords:
@@ -552,7 +578,7 @@ def _reply_unknown(msg):
 
     return (
         "I didn't understand that. Try:<br>"
-        "• <strong>product name</strong> — list all products<br>"
+        "• <strong>new products</strong> — latest arrivals<br>"
         "• <strong>low price</strong> — cheapest products<br>"
         "• <strong>how many products</strong> — total count<br>"
         "• <strong>search [keyword]</strong> — find products<br>"
