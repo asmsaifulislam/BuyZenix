@@ -508,6 +508,9 @@ def social_image(request, product_id, platform="facebook"):
     response = HttpResponse(buf.getvalue(), content_type="image/jpeg")
     etag = hashlib.md5(f"{product_id}-{platform}-{product.image.name}".encode()).hexdigest()
     response["ETag"] = etag
+    response["Cache-Control"] = "public, max-age=86400"
+    response["Content-Length"] = len(buf.getvalue())
+    response["Vary"] = "Accept"
     return response
 
 
