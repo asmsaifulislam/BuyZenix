@@ -285,9 +285,9 @@ button.default:hover, .button:hover {
 
 /* ─── Links ─── */
 .addlink,
-.object-tools a,
-.object-tools a:link,
-.object-tools a:visited {
+.object-tools a.addlink,
+.object-tools a.addlink:link,
+.object-tools a.addlink:visited {
   background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
   color: #ffffff !important;
   border-radius: 6px !important;
