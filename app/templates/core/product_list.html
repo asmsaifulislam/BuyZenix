@@ -6,9 +6,22 @@
 {% block content %}
 <section class="section">
   <div class="container">
+    <nav style="margin-bottom:1rem;font-size:.82rem;color:var(--text-muted)">
+      <a href="{% url 'core:home' %}" style="color:var(--primary)">Home</a> ›
+      {% if category %}
+        <a href="{% url 'core:product_list' %}" style="color:var(--primary)">Shop</a> ›
+        <span>{{ category.name }}</span>
+      {% elif query %}
+        <a href="{% url 'core:product_list' %}" style="color:var(--primary)">Shop</a> ›
+        <span>Search: "{{ query }}"</span>
+      {% else %}
+        <span>Shop</span>
+      {% endif %}
+    </nav>
+
     <div class="section-head">
       <h2>{% if query %}SEARCH: "{{ query }}"{% elif category %}{{ category.name|title }}{% else %}ALL PRODUCTS{% endif %}</h2>
-      <span style="color:var(--text-muted)">{{ products|length }} item{{ products|length|pluralize }}</span>
+      <span style="color:var(--text-muted)">{{ products.paginator.count }} item{{ products.paginator.count|pluralize }}</span>
     </div>
 
     <div class="filter-bar">
@@ -18,12 +31,47 @@
       {% endfor %}
     </div>
 
+    <form method="get" action="{% url 'core:product_list' %}" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:end">
+      {% if category %}<input type="hidden" name="category" value="{{ category.slug }}" />{% endif %}
+      {% if query %}<input type="hidden" name="q" value="{{ query }}" />{% endif %}
+      <div>
+        <label style="font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:4px">Min Price</label>
+        <input type="number" name="min_price" value="{{ min_price }}" placeholder="0" min="0" step="0.01" style="width:100px;padding:.4rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem" />
+      </div>
+      <div>
+        <label style="font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:4px">Max Price</label>
+        <input type="number" name="max_price" value="{{ max_price }}" placeholder="99999" min="0" step="0.01" style="width:100px;padding:.4rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem" />
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+      {% if min_price or max_price %}
+        <a href="{% url 'core:product_list' %}{% if category %}?category={{ category.slug }}{% endif %}" class="btn btn-sm btn-outline">Clear</a>
+      {% endif %}
+    </form>
+
     {% if products %}
       <div class="product-grid">
         {% for product in products %}
           {% include "core/_product_card.html" %}
         {% endfor %}
       </div>
+
+      {% if products.has_other_pages %}
+      <div style="display:flex;justify-content:center;gap:.35rem;margin-top:1.5rem;flex-wrap:wrap">
+        {% if products.has_previous %}
+          <a class="btn btn-sm btn-outline" href="?page={{ products.previous_page_number }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if sort_price %}&sort_price={{ sort_price }}{% endif %}{% if sort_date %}&sort_date={{ sort_date }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">← Prev</a>
+        {% endif %}
+        {% for num in products.paginator.page_range %}
+          {% if products.number == num %}
+            <span class="btn btn-sm" style="background:var(--primary);color:#fff;pointer-events:none">{{ num }}</span>
+          {% elif num > products.number|add:"-3" and num < products.number|add:"3" %}
+            <a class="btn btn-sm btn-outline" href="?page={{ num }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if sort_price %}&sort_price={{ sort_price }}{% endif %}{% if sort_date %}&sort_date={{ sort_date }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if products.has_next %}
+          <a class="btn btn-sm btn-outline" href="?page={{ products.next_page_number }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if sort_price %}&sort_price={{ sort_price }}{% endif %}{% if sort_date %}&sort_date={{ sort_date }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">Next →</a>
+        {% endif %}
+      </div>
+      {% endif %}
     {% else %}
       <div class="empty-state">
         <h3>No products found</h3>

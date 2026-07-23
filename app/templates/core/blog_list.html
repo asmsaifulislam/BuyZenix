@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Blog | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+
+    <nav style="margin-bottom:1rem;font-size:.82rem;color:var(--text-muted)">
+      <a href="{% url 'core:home' %}" style="color:var(--primary)">Home</a> › <span>Blog</span>
+    </nav>
+
+    <h1 style="font-size:2rem;font-weight:800;margin-bottom:1.5rem">Blog</h1>
+
+    {% if posts %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem">
+      {% for post in posts %}
+      <article style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:box-shadow .2s" onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='none'">
+        {% if post.image %}
+        <a href="{% url 'core:blog_detail' slug=post.slug %}">
+          <img src="{{ post.image.url }}" alt="{{ post.title }}" style="width:100%;height:200px;object-fit:cover" loading="lazy" />
+        </a>
+        {% endif %}
+        <div style="padding:1.25rem">
+          <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem">{{ post.created_at|date:"M d, Y" }}{% if post.author %} &middot; {{ post.author }}{% endif %}</p>
+          <a href="{% url 'core:blog_detail' slug=post.slug %}" style="text-decoration:none">
+            <h2 style="font-size:1.15rem;font-weight:700;color:var(--text);margin-bottom:.5rem;line-height:1.4">{{ post.title }}</h2>
+          </a>
+          {% if post.excerpt %}
+          <p style="color:var(--text-muted);font-size:.9rem;line-height:1.6;margin:0">{{ post.excerpt|truncatechars:150 }}</p>
+          {% endif %}
+          <a href="{% url 'core:blog_detail' slug=post.slug %}" style="display:inline-block;margin-top:.75rem;color:var(--primary);font-weight:600;font-size:.85rem;text-decoration:none">Read More &rarr;</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem 1rem;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius)">
+      <div style="font-size:3rem;margin-bottom:1rem">&#128221;</div>
+      <h2 style="font-weight:700;margin-bottom:.5rem">No blog posts yet</h2>
+      <p style="color:var(--text-muted)">Check back soon for articles, tips, and updates!</p>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

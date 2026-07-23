@@ -20,7 +20,7 @@ class ProductSitemap(Sitemap):
     priority = 0.9
 
     def items(self):
-        return Product.objects.filter(available=True)
+        return Product.objects.filter(available=True, is_archived=False)
 
     def lastmod(self, obj):
         return obj.updated if hasattr(obj, "updated") else None

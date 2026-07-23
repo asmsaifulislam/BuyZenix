@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -8,6 +10,11 @@ from .forms import OrderCreateForm
 from .models import Order, OrderItem
 from .tasks import order_created
 
+SHIPPING_COSTS = {
+    "standard": Decimal("60"),
+    "express": Decimal("120"),
+}
+
 
 def checkout(request):
     cart = Cart(request)
@@ -17,9 +24,23 @@ def checkout(request):
     if request.method == "POST":
         form = OrderCreateForm(request.POST)
         if form.is_valid():
+            shipping_method = form.cleaned_data.get("shipping_method", "standard")
+            shipping_cost = SHIPPING_COSTS.get(shipping_method, Decimal("60"))
             order = Order.objects.create(
                 user=request.user if request.user.is_authenticated else None,
-                **form.cleaned_data,
+                first_name=form.cleaned_data["first_name"],
+                last_name=form.cleaned_data["last_name"],
+                email=form.cleaned_data["email"],
+                address_line1=form.cleaned_data["address_line1"],
+                address_line2=form.cleaned_data.get("address_line2", ""),
+                city=form.cleaned_data["city"],
+                state=form.cleaned_data.get("state", ""),
+                postal_code=form.cleaned_data["postal_code"],
+                country=form.cleaned_data["country"],
+                phone=form.cleaned_data.get("phone", ""),
+                payment_method=form.cleaned_data.get("payment_method", "cod"),
+                shipping_method=shipping_method,
+                shipping_cost=shipping_cost,
             )
             for item in cart:
                 OrderItem.objects.create(
@@ -60,8 +81,15 @@ def checkout(request):
                 )
         form = OrderCreateForm(initial=initial)
 
+    subtotal = cart.get_total_price()
+    shipping_cost = SHIPPING_COSTS["standard"]
+
     return render(
-        request, "orders/checkout.html", {"cart": cart, "form": form}
+        request, "orders/checkout.html", {
+            "cart": cart, "form": form,
+            "subtotal": subtotal, "shipping_cost": shipping_cost,
+            "total": subtotal + shipping_cost,
+        }
     )
 
 
@@ -78,6 +106,8 @@ def buy_now(request, product_id):
         state = request.POST.get("state", "").strip()
         postal_code = request.POST.get("postal_code", "").strip()
         country = request.POST.get("country", "").strip()
+        payment_method = request.POST.get("payment_method", "cod")
+        shipping_method = request.POST.get("shipping_method", "standard")
 
         errors = {}
         if not full_name:
@@ -99,11 +129,12 @@ def buy_now(request, product_id):
             return render(request, "orders/buy_now.html", {
                 "product": product,
                 "quantity": quantity,
-                "total_price": product.price * quantity,
+                "total_price": product.effective_price * quantity,
                 "form_data": request.POST,
                 "errors": errors,
             })
 
+        shipping_cost = SHIPPING_COSTS.get(shipping_method, Decimal("60"))
         name_parts = full_name.split(" ", 1)
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
@@ -116,11 +147,14 @@ def buy_now(request, product_id):
             state=state,
             postal_code=postal_code,
             country=country,
+            payment_method=payment_method,
+            shipping_method=shipping_method,
+            shipping_cost=shipping_cost,
         )
         OrderItem.objects.create(
             order=order,
             product=product,
-            price=product.price,
+            price=product.effective_price,
             quantity=quantity,
             size=request.POST.get("size", "").strip(),
         )
@@ -134,7 +168,7 @@ def buy_now(request, product_id):
     return render(request, "orders/buy_now.html", {
         "product": product,
         "quantity": quantity,
-        "total_price": product.price * quantity,
+        "total_price": product.effective_price * quantity,
     })
 
 

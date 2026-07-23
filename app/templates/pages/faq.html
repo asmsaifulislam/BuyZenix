@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}FAQ | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:800px">
+
+    <nav style="margin-bottom:1rem;font-size:.82rem;color:var(--text-muted)">
+      <a href="{% url 'core:home' %}" style="color:var(--primary)">Home</a> › <span>FAQ</span>
+    </nav>
+
+    <h1 style="font-size:2rem;font-weight:800;margin-bottom:.5rem">Frequently Asked Questions</h1>
+    <p style="color:var(--text-muted);margin-bottom:1.5rem">Find answers to the most common questions about shopping with BuyZenix.</p>
+
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+
+      <details style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <summary style="padding:1rem 1.25rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          How do I place an order?
+          <span style="font-size:1.2rem;transition:transform .2s">&#9660;</span>
+        </summary>
+        <div style="padding:0 1.25rem 1rem;color:var(--text-muted);line-height:1.7">
+          Simply browse our products, add items to your cart, and proceed to checkout. You can pay via Cash on Delivery when your order arrives.
+        </div>
+      </details>
+
+      <details style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <summary style="padding:1rem 1.25rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          What payment methods do you accept?
+          <span style="font-size:1.2rem;transition:transform .2s">&#9660;</span>
+        </summary>
+        <div style="padding:0 1.25rem 1rem;color:var(--text-muted);line-height:1.7">
+          We currently support <strong>Cash on Delivery (COD)</strong>. Simply pay the delivery person when your order arrives at your doorstep.
+        </div>
+      </details>
+
+      <details style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <summary style="padding:1rem 1.25rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          How long does delivery take?
+          <span style="font-size:1.2rem;transition:transform .2s">&#9660;</span>
+        </summary>
+        <div style="padding:0 1.25rem 1rem;color:var(--text-muted);line-height:1.7">
+          <strong>Standard Delivery:</strong> 3–5 business days (৳60)<br/>
+          <strong>Express Delivery:</strong> 1–2 business days (৳120)
+        </div>
+      </details>
+
+      <details style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <summary style="padding:1rem 1.25rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          Can I return or exchange a product?
+          <span style="font-size:1.2rem;transition:transform .2s">&#9660;</span>
+        </summary>
+        <div style="padding:0 1.25rem 1rem;color:var(--text-muted);line-height:1.7">
+          Yes! If you receive a damaged or incorrect product, contact us within 3 days of delivery. We'll arrange a return or exchange at no extra cost.
+        </div>
+      </details>
+
+      <details style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <summary style="padding:1rem 1.25rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          Do you offer warranty on products?
+          <span style="font-size:1.2rem;transition:transform .2s">&#9660;</span>
+        </summary>
+        <div style="padding:0 1.25rem 1rem;color:var(--text-muted);line-height:1.7">
+          Warranty coverage depends on the product and brand. Check the product description for warranty details. For electronics, most items come with a manufacturer's warranty.
+        </div>
+      </details>
+
+      <details style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <summary style="padding:1rem 1.25rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          How do I create an account?
+          <span style="font-size:1.2rem;transition:transform .2s">&#9660;</span>
+        </summary>
+        <div style="padding:0 1.25rem 1rem;color:var(--text-muted);line-height:1.7">
+          Click "Sign In" in the top-right corner and create an account with your email. Having an account lets you track orders, save wishlist items, and leave reviews.
+        </div>
+      </details>
+
+      <details style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <summary style="padding:1rem 1.25rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          How can I track my order?
+          <span style="font-size:1.2rem;transition:transform .2s">&#9660;</span>
+        </summary>
+        <div style="padding:0 1.25rem 1rem;color:var(--text-muted);line-height:1.7">
+          After placing your order, you can view the order status in your account under "My Orders". You'll also receive updates via email/SMS.
+        </div>
+      </details>
+
+    </div>
+
+    <div style="text-align:center;margin-top:2rem">
+      <p style="color:var(--text-muted);margin-bottom:.75rem">Still have questions?</p>
+      <a href="{% url 'core:contact' %}" class="btn btn-primary">Contact Us</a>
+    </div>
+
+  </div>
+</section>
+
+<script>
+document.querySelectorAll('details summary span:last-child').forEach(span => {
+  const details = span.closest('details');
+  details.addEventListener('toggle', () => {
+    span.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0)';
+  });
+});
+</script>
+{% endblock %}

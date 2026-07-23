@@ -10,7 +10,9 @@
 <meta property="og:title" content="{{ product.name }} | BuyZenix" />
 <meta property="og:description" content="{{ product.description|truncatechars:160 }}" />
 {% if product.image %}
-<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}" />
+<meta property="og:image" content="{{ social_img_base }}/facebook/" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 {% endif %}
 <meta property="og:type" content="product" />
 <meta property="og:url" content="{{ request.build_absolute_uri }}" />
@@ -20,7 +22,9 @@
 <meta name="twitter:title" content="{{ product.name }} | BuyZenix" />
 <meta name="twitter:description" content="{{ product.description|truncatechars:160 }}" />
 {% if product.image %}
-<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}" />
+<meta name="twitter:image" content="{{ social_img_base }}/twitter/" />
+<meta name="twitter:image:width" content="1200" />
+<meta name="twitter:image:height" content="675" />
 {% endif %}
 <script type="application/ld+json">
 {
@@ -31,12 +35,13 @@
   "brand": {"@type": "Brand", "name": "BuyZenix"},
   "offers": {
     "@type": "Offer",
-    "price": "{{ product.price }}",
+    "price": "{{ product.effective_price }}",
     "priceCurrency": "BDT",
     "availability": "{% if product.available %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
     "url": "{{ request.build_absolute_uri }}"
   }
   {% if product.image %},"image": "{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}"{% endif %}
+  {% if review_count > 0 %},"aggregateRating": {"@type": "AggregateRating", "ratingValue": "{{ avg_rating }}", "reviewCount": "{{ review_count }}"}{% endif %}
 }
 </script>
 {% endblock %}
@@ -44,12 +49,17 @@
 {% block content %}
 <section class="section">
   <div class="container">
-    <a href="{% url 'core:product_list' %}" style="color:var(--text-muted);display:inline-flex;align-items:center;gap:.25rem;margin-bottom:1rem">← Back to shop</a>
+    <nav style="margin-bottom:1rem;font-size:.82rem;color:var(--text-muted)">
+      <a href="{% url 'core:home' %}" style="color:var(--primary)">Home</a> ›
+      <a href="{% url 'core:product_list' %}" style="color:var(--primary)">Shop</a> ›
+      <a href="{{ product.category.get_absolute_url }}" style="color:var(--primary)">{{ product.category.name }}</a> ›
+      <span>{{ product.name }}</span>
+    </nav>
     <div class="pd-grid">
       <div>
         <div class="product-thumb" style="border-radius:var(--radius-lg);aspect-ratio:1/1">
           {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="border-radius:var(--radius-lg)" />
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="border-radius:var(--radius-lg)" loading="lazy" />
           {% else %}
             <span class="ph" style="font-size:4rem">{{ product.name|first|upper }}</span>
           {% endif %}
@@ -58,7 +68,7 @@
         <div style="display:flex;gap:.5rem;margin-top:.75rem;overflow-x:auto">
           {% for img in gallery %}
             {% if img.image %}
-            <img src="{{ img.image.url }}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid var(--border);flex-shrink:0;cursor:pointer" onclick="document.querySelector('.pd-grid .product-thumb img').src=this.src" />
+            <img src="{{ img.image.url }}" alt="" loading="lazy" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid var(--border);flex-shrink:0;cursor:pointer" onclick="document.querySelector('.pd-grid .product-thumb img').src=this.src" />
             {% endif %}
           {% endfor %}
         </div>
@@ -67,12 +77,12 @@
         <div style="margin-top:1rem;border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:16/9">
           {% if "youtube" in product.video_url %}
             {% with video_id=product.video_url|slice:"11:" %}
-            <iframe src="https://www.youtube.com/embed/{{ video_id }}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>
+            <iframe src="https://www.youtube.com/embed/{{ video_id }}" style="width:100%;height:100%;border:none" allowfullscreen loading="lazy"></iframe>
             {% endwith %}
           {% elif "vimeo" in product.video_url %}
-            <iframe src="https://player.vimeo.com/video/{{ product.video_url|slice:'18:' }}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>
+            <iframe src="https://player.vimeo.com/video/{{ product.video_url|slice:'18:' }}" style="width:100%;height:100%;border:none" allowfullscreen loading="lazy"></iframe>
           {% else %}
-            <video controls style="width:100%;height:100%">
+            <video controls style="width:100%;height:100%" preload="none">
               <source src="{{ product.video_url }}" />
             </video>
           {% endif %}
@@ -107,6 +117,13 @@
             {% money product.price %}
           {% endif %}
         </div>
+
+        {% if review_count > 0 %}
+        <div style="margin-top:.35rem;display:flex;align-items:center;gap:.5rem">
+          <span style="color:#f59e0b;font-size:.9rem">{% for i in "12345" %}{% if forloop.counter <= avg_rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+          <span style="font-size:.82rem;color:var(--text-muted)">{{ avg_rating }} ({{ review_count }} review{{ review_count|pluralize }})</span>
+        </div>
+        {% endif %}
 
         <p style="color:var(--text-muted)">
           {% if product.available %}
@@ -157,14 +174,22 @@
         </div>
         {% endif %}
 
-        <form class="pd-add-form" action="{% url 'cart:cart_add' product.id %}" method="post">
-          {% csrf_token %}
-          <input type="hidden" name="size" id="selected-size" value="" />
-          <input type="number" name="quantity" value="1" min="1" max="{{ product.stock|default:10 }}" />
-          <button class="btn btn-primary btn-block" type="submit" {% if not product.available %}disabled{% endif %}>
-            {% if product.available %}Add to cart{% else %}Unavailable{% endif %}
-          </button>
-        </form>
+        <div style="display:flex;gap:.5rem;margin-top:.5rem">
+          <form class="pd-add-form" action="{% url 'cart:cart_add' product.id %}" method="post" style="flex:1">
+            {% csrf_token %}
+            <input type="hidden" name="size" id="selected-size" value="" />
+            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock|default:10 }}" style="width:60px;margin-right:.5rem;padding:.4rem;border:1.5px solid var(--border);border-radius:8px" />
+            <button class="btn btn-primary" type="submit" {% if not product.available %}disabled{% endif %}>
+              {% if product.available %}Add to cart{% else %}Unavailable{% endif %}
+            </button>
+          </form>
+          <form method="post" action="{% url 'core:toggle_wishlist' product.id %}">
+            {% csrf_token %}
+            <button type="submit" style="width:44px;height:44px;border:1.5px solid var(--border);border-radius:10px;background:{% if is_wishlisted %}#fee2e2{% else %}#f8fafc{% endif %};font-size:1.2rem;cursor:pointer;transition:all .15s" title="{% if is_wishlisted %}Remove from wishlist{% else %}Add to wishlist{% endif %}">
+              {% if is_wishlisted %}❤️{% else %}🤍{% endif %}
+            </button>
+          </form>
+        </div>
 
         <form class="pd-add-form" action="{% url 'orders:buy_now' product.id %}" method="post" style="margin-top:.5rem">
           {% csrf_token %}
@@ -184,15 +209,12 @@
               style="padding:.5rem 1rem;border:none;border-radius:8px;background:var(--primary);color:#fff;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .15s">
               📋 Copy
             </button>
-            <a href="{% url 'core:product_share' product.pk %}" class="btn btn-sm btn-outline" style="padding:.5rem .75rem;font-size:.82rem;text-decoration:none">🔗 Share</a>
           </div>
           <div id="copyMsg" style="display:none;font-size:.78rem;color:var(--green);font-weight:600;margin-bottom:.5rem">✓ Link copied!</div>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
             <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#1877f2;color:#fff;border-radius:8px">Facebook</a>
             <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ product.name }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#1da1f2;color:#fff;border-radius:8px">Twitter</a>
             <a href="https://wa.me/?text={{ product.name }}%20{{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#25d366;color:#fff;border-radius:8px">WhatsApp</a>
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener" class="btn btn-sm" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border-radius:8px">Instagram</a>
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="btn btn-sm" style="background:#0A66C2;color:#fff;border-radius:8px">LinkedIn</a>
           </div>
         </div>
 
@@ -205,6 +227,58 @@
               {% include "core/_product_card.html" %}
             {% endfor %}
           </div>
+        </div>
+        {% endif %}
+
+        {% if reviews %}
+        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+          <h4 style="margin-bottom:1rem">Customer Reviews ({{ review_count }})</h4>
+          {% for review in reviews %}
+          <div style="padding:1rem;border:1px solid var(--border);border-radius:10px;margin-bottom:.75rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <div>
+                <strong>{{ review.user.username }}</strong>
+                <span style="color:#f59e0b;margin-left:.5rem">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+              </div>
+              <span style="font-size:.75rem;color:var(--text-muted)">{{ review.created|date:"M d, Y" }}</span>
+            </div>
+            {% if review.title %}<strong style="font-size:.9rem">{{ review.title }}</strong>{% endif %}
+            {% if review.body %}<p style="margin:.25rem 0 0;color:var(--text);font-size:.9rem">{{ review.body }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if user.is_authenticated %}
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <h4 style="margin-bottom:.75rem">Write a Review</h4>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="review_submit" value="1" />
+            <div style="margin-bottom:.75rem">
+              <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:.25rem">Rating</label>
+              <select name="rating" style="padding:.4rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem">
+                <option value="5">★★★★★ (5)</option>
+                <option value="4">★★★★☆ (4)</option>
+                <option value="3">★★★☆☆ (3)</option>
+                <option value="2">★★☆☆☆ (2)</option>
+                <option value="1">★☆☆☆☆ (1)</option>
+              </select>
+            </div>
+            <div style="margin-bottom:.75rem">
+              <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:.25rem">Title (optional)</label>
+              <input type="text" name="review_title" placeholder="Sum up your experience" style="width:100%;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem" />
+            </div>
+            <div style="margin-bottom:.75rem">
+              <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:.25rem">Review</label>
+              <textarea name="review_body" rows="3" placeholder="Share your experience..." style="width:100%;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;resize:vertical"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Submit Review</button>
+          </form>
+        </div>
+        {% elif not user.is_authenticated %}
+        <div style="margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:10px;text-align:center">
+          <p style="color:var(--text-muted);font-size:.85rem;margin:0"><a href="{% url 'accounts:login' %}" style="color:var(--primary)">Log in</a> to write a review</p>
         </div>
         {% endif %}
       </div>

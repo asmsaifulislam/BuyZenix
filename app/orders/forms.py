@@ -12,3 +12,16 @@ class OrderCreateForm(forms.Form):
     postal_code = forms.CharField(max_length=20)
     country = forms.CharField(max_length=100)
     phone = forms.CharField(max_length=30, required=False)
+    payment_method = forms.ChoiceField(
+        choices=[("cod", "Cash on Delivery")],
+        initial="cod",
+        widget=forms.RadioSelect,
+    )
+    shipping_method = forms.ChoiceField(
+        choices=[
+            ("standard", "Standard Delivery (3-5 days) — ৳60"),
+            ("express", "Express Delivery (1-2 days) — ৳120"),
+        ],
+        initial="standard",
+        widget=forms.RadioSelect,
+    )

@@ -35,6 +35,18 @@ def cart_clear(request):
     return redirect("cart:cart_detail")
 
 
+@require_POST
+def cart_update_quantity(request, product_id):
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    size = request.POST.get("size", "").strip()
+    quantity = int(request.POST.get("quantity", 1))
+    if quantity < 1:
+        quantity = 1
+    cart.add(product, quantity=quantity, override_quantity=True, size=size)
+    return redirect("cart:cart_detail")
+
+
 def cart_detail(request):
     cart = Cart(request)
     coupon_code = request.session.get("coupon_code", "")

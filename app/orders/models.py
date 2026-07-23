@@ -10,6 +10,16 @@ class Order(models.Model):
         ("delivered", "Delivered"),
         ("cancelled", "Cancelled"),
     )
+    PAYMENT_CHOICES = (
+        ("cod", "Cash on Delivery"),
+        ("bkash", "bKash"),
+        ("nagad", "Nagad"),
+        ("card", "Credit/Debit Card"),
+    )
+    SHIPPING_CHOICES = (
+        ("standard", "Standard Delivery"),
+        ("express", "Express Delivery"),
+    )
 
     user = models.ForeignKey(
         User, related_name="orders", on_delete=models.CASCADE, null=True, blank=True
@@ -27,6 +37,9 @@ class Order(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     paid = models.BooleanField(default=False)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default="cod")
+    shipping_method = models.CharField(max_length=20, choices=SHIPPING_CHOICES, default="standard")
+    shipping_cost = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
     class Meta:
@@ -37,7 +50,11 @@ class Order(models.Model):
         return f"Order #{self.id}"
 
     def get_total_cost(self):
-        return sum(item.get_cost() for item in self.items.all())
+        items_total = sum(item.get_cost() for item in self.items.all())
+        return items_total + self.shipping_cost
+
+    def get_total_quantity(self):
+        return sum(item.quantity for item in self.items.all())
 
 
 class OrderItem(models.Model):

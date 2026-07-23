@@ -16,16 +16,59 @@
           {% csrf_token %}
           <div class="form-grid">
             {% for field in form %}
+              {% if field.name == "payment_method" %}
               <div class="field full">
+                <label>Payment Method</label>
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.5rem">
+                  {% for choice in field.field.choices %}
+                  <label style="display:flex;align-items:center;gap:.5rem;padding:12px 20px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;flex:1;min-width:140px">
+                    <input type="radio" name="payment_method" value="{{ choice.0 }}" {% if choice.0 == field.value %}checked{% endif %} style="accent-color:var(--primary)">
+                    <div>
+                      {% if choice.0 == "cod" %}💵{% elif choice.0 == "bkash" %}📱{% elif choice.0 == "nagad" %}📱{% else %}💳{% endif %}
+                      <strong style="font-size:.85rem">{{ choice.1 }}</strong>
+                    </div>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+              {% elif field.name == "shipping_method" %}
+              <div class="field full">
+                <label>Shipping Method</label>
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.5rem">
+                  {% for choice in field.field.choices %}
+                  <label style="display:flex;align-items:center;gap:.5rem;padding:12px 20px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;flex:1;min-width:180px">
+                    <input type="radio" name="shipping_method" value="{{ choice.0 }}" {% if choice.0 == field.value %}checked{% endif %} style="accent-color:var(--primary)">
+                    <div>
+                      {% if choice.0 == "express" %}⚡{% else %}🚚{% endif %}
+                      <strong style="font-size:.85rem">{{ choice.1 }}</strong>
+                    </div>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+              {% else %}
+              <div class="field {% if field.name == "address_line2" or field.name == "state" %}{% else %}full{% endif %}">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% for error in field.errors %}
                   <span class="error">{{ error }}</span>
                 {% endfor %}
               </div>
+              {% endif %}
             {% endfor %}
           </div>
-          <button class="btn btn-primary btn-block" type="submit" style="margin-top:1.25rem">Place order</button>
+
+          <div style="margin-top:1.25rem;padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;display:flex;align-items:center;gap:.75rem">
+            <span style="font-size:1.5rem">🔒</span>
+            <div>
+              <strong style="color:#166534;font-size:.85rem">Secure Checkout</strong>
+              <p style="margin:0;font-size:.78rem;color:#166534">Your payment information is safe. We use SSL encryption.</p>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit" style="margin-top:1.25rem">
+            💵 Place Order (Cash on Delivery)
+          </button>
         </form>
       </div>
 
@@ -34,11 +77,19 @@
           <h3>Your order</h3>
           {% for item in cart %}
             <div class="row">
-              <span>{{ item.product.name }} × {{ item.quantity }}</span>
+              <span>{{ item.product.name }} {% if item.size %}({{ item.size }}){% endif %} × {{ item.quantity }}</span>
               <span>{% money item.total_price %}</span>
             </div>
           {% endfor %}
-          <div class="row total"><span>Total</span><span>{% money cart.get_total_price %}</span></div>
+          <div class="row"><span>Subtotal</span><span>{% money subtotal %}</span></div>
+          <div class="row"><span>Shipping</span><span>{% money shipping_cost %}</span></div>
+          <div class="row total"><span>Total</span><span>{% money total %}</span></div>
+
+          <div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+            <span style="padding:4px 10px;background:#f1f5f9;border-radius:6px;font-size:.7rem;font-weight:600;color:#6b7280">🔒 SSL Secured</span>
+            <span style="padding:4px 10px;background:#f1f5f9;border-radius:6px;font-size:.7rem;font-weight:600;color:#6b7280">💵 Cash on Delivery</span>
+            <span style="padding:4px 10px;background:#f1f5f9;border-radius:6px;font-size:.7rem;font-weight:600;color:#6b7280">✅ Quality Checked</span>
+          </div>
         </div>
       </div>
     </div>

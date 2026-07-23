@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About Us | BuyZenix{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:800px">
+
+    <nav style="margin-bottom:1rem;font-size:.82rem;color:var(--text-muted)">
+      <a href="{% url 'core:home' %}" style="color:var(--primary)">Home</a> › <span>About Us</span>
+    </nav>
+
+    <h1 style="font-size:2rem;font-weight:800;margin-bottom:1rem">About BuyZenix</h1>
+
+    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;line-height:1.7;color:var(--text)">
+      <p style="font-size:1.1rem;margin-bottom:1rem">
+        Welcome to <strong>BuyZenix</strong> — your trusted online shopping destination in Bangladesh. We are dedicated to bringing you the best products at competitive prices with a seamless shopping experience.
+      </p>
+
+      <h2 style="font-size:1.3rem;font-weight:700;margin:1.5rem 0 .5rem">Our Mission</h2>
+      <p style="margin-bottom:1rem">
+        To make quality products accessible to everyone in Bangladesh through a fast, secure, and enjoyable online shopping platform.
+      </p>
+
+      <h2 style="font-size:1.3rem;font-weight:700;margin:1.5rem 0 .5rem">Why Choose Us?</h2>
+      <ul style="margin-bottom:1rem;padding-left:1.5rem">
+        <li><strong>Authentic Products</strong> — We source directly from authorized distributors and brands.</li>
+        <li><strong>Cash on Delivery</strong> — Pay when you receive your order, no advance payment needed.</li>
+        <li><strong>Fast Delivery</strong> — We deliver across Bangladesh with reliable logistics partners.</li>
+        <li><strong>Secure Payments</strong> — Your transaction data is encrypted and protected.</li>
+        <li><strong>Customer Support</strong> — Our team is here to help you with any questions or issues.</li>
+      </ul>
+
+      <h2 style="font-size:1.3rem;font-weight:700;margin:1.5rem 0 .5rem">Our Story</h2>
+      <p style="margin-bottom:1rem">
+        BuyZenix was founded with the vision of creating a modern, user-friendly e-commerce platform tailored for the Bangladeshi market. From electronics to fashion, home essentials to accessories, we curate a wide range of products to meet your everyday needs.
+      </p>
+
+      <h2 style="font-size:1.3rem;font-weight:700;margin:1.5rem 0 .5rem">Get in Touch</h2>
+      <p>
+        Have questions? Visit our <a href="{% url 'core:contact' %}" style="color:var(--primary)">Contact page</a> or reach out to us at <strong>support@buyzenix.com</strong>.
+      </p>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

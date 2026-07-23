@@ -40,6 +40,7 @@ class Product(models.Model):
     )
     name = models.CharField(max_length=160)
     slug = models.SlugField(max_length=180, unique=True, blank=True)
+    sku = models.CharField(max_length=64, unique=True, blank=True, null=True, help_text="Unique SKU for inventory tracking")
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Discounted price (leave empty for no sale)")
@@ -49,6 +50,9 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)
     available = models.BooleanField(default=True)
     featured = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False, help_text="Hide product from shop (for duplicate/archive management)")
+    archived_at = models.DateTimeField(null=True, blank=True)
+    tags = models.CharField(max_length=500, blank=True, help_text="Comma-separated tags for organization")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -147,3 +151,129 @@ class ProductImage(models.Model):
         if self.angle:
             parts.append(self.angle)
         return " — ".join(parts)
+
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(User, related_name="wishlist", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="wishlisted_by", on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "product")
+        ordering = ["-created"]
+
+    def __str__(self):
+        return f"{self.user.username} — {self.product.name}"
+
+
+class Review(models.Model):
+    RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]
+    user = models.ForeignKey(User, related_name="reviews", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="reviews", on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField(choices=RATING_CHOICES, default=5)
+    title = models.CharField(max_length=120, blank=True)
+    body = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created"]
+        unique_together = ("user", "product")
+
+    def __str__(self):
+        return f"{self.user.username} — {self.product.name} ({self.rating}★)"
+
+    @property
+    def stars(self):
+        return "★" * self.rating + "☆" * (5 - self.rating)
+
+
+class BlogPost(models.Model):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True, blank=True)
+    excerpt = models.TextField(blank=True, help_text="Short summary for listings")
+    body = models.TextField()
+    image = models.FileField(upload_to="blog/", blank=True, null=True, validators=[validate_image_file])
+    author = models.ForeignKey(User, related_name="blog_posts", on_delete=models.SET_NULL, null=True, blank=True)
+    is_published = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("core:blog_detail", args=[self.slug])
+
+    def __str__(self):
+        return self.title
+
+
+class Collection(models.Model):
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
+    description = models.TextField(blank=True)
+    image = models.FileField(upload_to="collections/", blank=True, null=True, validators=[validate_image_file])
+    products = models.ManyToManyField(Product, blank=True, related_name="collections")
+    is_active = models.BooleanField(default=True)
+    position = models.PositiveIntegerField(default=0)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["position", "name"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("core:collection_detail", args=[self.slug])
+
+    def __str__(self):
+        return self.name
+
+
+class NewsletterSubscriber(models.Model):
+    email = models.EmailField(unique=True)
+    is_active = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, related_name="variants", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, help_text="e.g. 'Blue / XL' or 'Red / M'")
+    sku = models.CharField(max_length=64, unique=True, blank=True, null=True)
+    price_override = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Leave empty to use parent price")
+    stock = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "name"]
+
+    def __str__(self):
+        return f"{self.product.name} — {self.name}"
+
+    @property
+    def price(self):
+        return self.price_override if self.price_override else self.product.effective_price
+
+
+class ProductRedirect(models.Model):
+    old_slug = models.SlugField(max_length=180, unique=True, db_index=True)
+    new_product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="redirects_from")
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created"]
+
+    def __str__(self):
+        return f"{self.old_slug} → {self.new_product.slug}"

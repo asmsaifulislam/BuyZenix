@@ -33,10 +33,10 @@
               style="flex:1;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-size:.82rem;color:var(--text);background:#f8fafc;font-family:monospace" />
             <button type="button" onclick="copyLink()" id="copyLinkBtn"
               style="padding:.6rem 1.1rem;border:none;border-radius:10px;background:var(--primary);color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .15s">
-              📋 Copy
+              Copy
             </button>
           </div>
-          <div id="copySuccess" style="display:none;font-size:.78rem;color:var(--green);font-weight:600;margin-top:.35rem">✓ Link copied to clipboard!</div>
+          <div id="copySuccess" style="display:none;font-size:.78rem;color:var(--green);font-weight:600;margin-top:.35rem">Link copied to clipboard!</div>
         </div>
 
         <div style="margin-bottom:1.25rem">
@@ -80,9 +80,47 @@
           </div>
         </div>
 
+        {% if product.image %}
+        <div style="margin-bottom:1.25rem">
+          <label style="display:block;font-size:.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">Auto-Resized Images for Each Platform</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+            <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+              <div style="background:#f8fafc;padding:.4rem .7rem;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Facebook (1200x630)</div>
+              <img src="{{ social.facebook.image }}" alt="Facebook" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy" />
+            </div>
+            <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+              <div style="background:#f8fafc;padding:.4rem .7rem;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Twitter (1200x675)</div>
+              <img src="{{ social.twitter.image }}" alt="Twitter" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy" />
+            </div>
+            <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+              <div style="background:#f8fafc;padding:.4rem .7rem;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Instagram (1080x1080)</div>
+              <img src="{{ social.instagram.image }}" alt="Instagram" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy" />
+            </div>
+            <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+              <div style="background:#f8fafc;padding:.4rem .7rem;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">TikTok (1080x1920)</div>
+              <img src="{{ social.tiktok.image }}" alt="TikTok" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy" />
+            </div>
+            <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+              <div style="background:#f8fafc;padding:.4rem .7rem;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">LinkedIn (1200x627)</div>
+              <img src="{{ social.linkedin.image }}" alt="LinkedIn" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy" />
+            </div>
+            <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+              <div style="background:#f8fafc;padding:.4rem .7rem;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Pinterest (1000x1500)</div>
+              <img src="{{ social.pinterest.image }}" alt="Pinterest" style="width:100%;height:120px;object-fit:cover;display:block" loading="lazy" />
+            </div>
+          </div>
+          <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.4rem">
+            <a href="{{ social.facebook.image }}" download="facebook_{{ product.slug }}.jpg" style="font-size:.72rem;padding:.3rem .6rem;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:var(--text);text-decoration:none;font-weight:600">Download Facebook</a>
+            <a href="{{ social.instagram.image }}" download="instagram_{{ product.slug }}.jpg" style="font-size:.72rem;padding:.3rem .6rem;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:var(--text);text-decoration:none;font-weight:600">Download Instagram</a>
+            <a href="{{ social.tiktok.image }}" download="tiktok_{{ product.slug }}.jpg" style="font-size:.72rem;padding:.3rem .6rem;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:var(--text);text-decoration:none;font-weight:600">Download TikTok</a>
+            <a href="{{ social.twitter.image }}" download="twitter_{{ product.slug }}.jpg" style="font-size:.72rem;padding:.3rem .6rem;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:var(--text);text-decoration:none;font-weight:600">Download Twitter</a>
+          </div>
+        </div>
+        {% endif %}
+
         <div style="text-align:center;padding-top:1rem;border-top:1px solid var(--border)">
           <a href="{{ product_url }}" class="btn btn-primary" style="width:100%;justify-content:center;padding:.75rem">
-            View Product Page →
+            View Product Page
           </a>
         </div>
       </div>
@@ -100,21 +138,21 @@ function copyLink() {
   inp.select();
   inp.setSelectionRange(0, 99999);
   navigator.clipboard.writeText(inp.value).then(function() {
-    btn.textContent = '✓ Copied!';
+    btn.textContent = 'Copied!';
     btn.style.background = '#16a34a';
     msg.style.display = 'block';
     setTimeout(function() {
-      btn.textContent = '📋 Copy';
+      btn.textContent = 'Copy';
       btn.style.background = '';
       msg.style.display = 'none';
     }, 2500);
   }).catch(function() {
     document.execCommand('copy');
-    btn.textContent = '✓ Copied!';
+    btn.textContent = 'Copied!';
     btn.style.background = '#16a34a';
     msg.style.display = 'block';
     setTimeout(function() {
-      btn.textContent = '📋 Copy';
+      btn.textContent = 'Copy';
       btn.style.background = '';
       msg.style.display = 'none';
     }, 2500);

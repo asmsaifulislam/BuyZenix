@@ -17,7 +17,7 @@
           <div class="cart-item">
             <div class="thumb">
               {% if item.product.image %}
-                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" />
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy" />
               {% else %}
                 <span style="color:#2a3050;font-weight:900">{{ item.product.name|first|upper }}</span>
               {% endif %}
@@ -25,9 +25,22 @@
             <div>
               <strong>{{ item.product.name }}</strong>
               {% if item.size %}<span style="display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:6px;font-size:.75rem;font-weight:700;margin-left:.35rem;background:#f8fafc">{{ item.size }}</span>{% endif %}
-              <div style="color:var(--text-muted);font-size:.85rem">{% money item.price %} × {{ item.quantity }}</div>
-              <div style="margin-top:.35rem">
-                <a class="btn btn-outline btn-sm" href="{% url 'core:product_detail' item.product.slug %}">View</a>
+              <div style="color:var(--text-muted);font-size:.85rem">{% money item.price %}</div>
+              <div style="margin-top:.5rem;display:flex;align-items:center;gap:.5rem">
+                <form action="{% url 'cart:cart_update_quantity' item.product.id %}" method="post" style="display:inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="size" value="{{ item.size|default:'' }}" />
+                  <input type="hidden" name="quantity" value="{{ item.quantity|add:'-1' }}" />
+                  <button type="submit" style="width:30px;height:30px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc;font-weight:700;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
+                </form>
+                <span style="min-width:24px;text-align:center;font-weight:700;font-size:.95rem">{{ item.quantity }}</span>
+                <form action="{% url 'cart:cart_update_quantity' item.product.id %}" method="post" style="display:inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="size" value="{{ item.size|default:'' }}" />
+                  <input type="hidden" name="quantity" value="{{ item.quantity|add:'1' }}" />
+                  <button type="submit" style="width:30px;height:30px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc;font-weight:700;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+                </form>
+                <a class="btn btn-outline btn-sm" href="{% url 'core:product_detail' item.product.slug %}" style="margin-left:.5rem">View</a>
               </div>
             </div>
             <div>
@@ -35,7 +48,7 @@
               <form action="{% url 'cart:cart_remove' item.product.id %}" method="post" style="margin-top:.5rem">
                 {% csrf_token %}
                 <input type="hidden" name="size" value="{{ item.size|default:'' }}" />
-                <button class="btn btn-outline btn-sm" type="submit">Remove</button>
+                <button class="btn btn-outline btn-sm" type="submit" style="color:var(--red);border-color:var(--red)">Remove</button>
               </form>
             </div>
           </div>
@@ -67,10 +80,16 @@
             <p style="color:var(--red);font-size:.8rem;margin-top:.5rem">{{ coupon_error }}</p>
             {% endif %}
 
-            <div class="row"><span>Shipping</span><span>Free</span></div>
+            <div class="row"><span>Shipping</span><span style="color:var(--green)">Free</span></div>
             <div class="row total"><span>Total</span><span>{% money total %}</span></div>
-            <a class="btn btn-primary btn-block" href="{% url 'orders:checkout' %}" style="margin-top:1rem">Checkout</a>
+            <a class="btn btn-primary btn-block" href="{% url 'orders:checkout' %}" style="margin-top:1rem">💵 Checkout (COD)</a>
             <a class="btn btn-outline btn-block" href="{% url 'core:product_list' %}" style="margin-top:.65rem">Continue shopping</a>
+
+            <div style="margin-top:.75rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+              <span style="padding:4px 8px;background:#f1f5f9;border-radius:6px;font-size:.68rem;font-weight:600;color:#6b7280">🔒 Secure</span>
+              <span style="padding:4px 8px;background:#f1f5f9;border-radius:6px;font-size:.68rem;font-weight:600;color:#6b7280">💵 COD</span>
+              <span style="padding:4px 8px;background:#f1f5f9;border-radius:6px;font-size:.68rem;font-weight:600;color:#6b7280">🚚 Free Shipping</span>
+            </div>
           </div>
         </div>
       </div>

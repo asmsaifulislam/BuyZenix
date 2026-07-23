@@ -3,19 +3,8 @@
 
 {% block title %}BuyZenix Admin{% endblock %}
 
-{% block extrahead %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/admin_custom.css' %}?v=9" />
-{% endblock %}
-
 {% block branding %}
-<div style="display:flex;align-items:center;gap:10px">
-  <div style="width:34px;height:34px;border-radius:8px;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:.8rem">BZ</div>
-  <div>
-    <div style="font-size:1rem;font-weight:800;color:#fff">BuyZenix</div>
-    <div style="font-size:.6rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em">Admin</div>
-  </div>
+<div id="branding">
+  <h1 id="site-name"><a href="{% url 'admin:index' %}">BuyZenix Admin</a></h1>
 </div>
 {% endblock %}
-
-{% block nav-global %}{% endblock %}
