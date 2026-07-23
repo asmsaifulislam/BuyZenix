@@ -81,6 +81,9 @@ body, #container {
   background: linear-gradient(135deg, #0f172a, #1e293b) !important;
   box-shadow: 0 2px 12px rgba(0,0,0,.2) !important;
 }
+#header *, #header a, #header div, #header span, #branding * {
+  color: #ffffff !important;
+}
 
 div.header {
   background: transparent !important;
@@ -281,9 +284,12 @@ button.default:hover, .button:hover {
 }
 
 /* ─── Links ─── */
-.addlink {
+.addlink,
+.object-tools a,
+.object-tools a:link,
+.object-tools a:visited {
   background: linear-gradient(135deg, #4f46e5, #9333ea) !important;
-  color: #fff !important;
+  color: #ffffff !important;
   border-radius: 6px !important;
   padding: 3px 10px !important;
   font-size: .78rem !important;
