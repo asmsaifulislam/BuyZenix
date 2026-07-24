@@ -5,7 +5,7 @@ from PIL import Image
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q, Sum, Count, Case, When, IntegerField, Avg
+from django.db.models import Q, Sum, Count, Avg
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -162,22 +162,24 @@ def product_detail(request, slug):
             "position": img.position,
         })
 
-    stop_words = {"for", "the", "a", "an", "and", "or", "with", "in", "on", "at", "to", "of", "by", "is", "it", "from", "no", "not", "pro", "plus", "max", "new", "old"}
-    words = [w for w in product.name.lower().split() if len(w) > 1 and w not in stop_words]
+    # Related products: same category, different product, exclude near-duplicates
+    related = Product.objects.filter(
+        category=product.category, available=True, is_archived=False
+    ).exclude(id=product.id)
 
-    q = Q()
-    for w in words:
-        q |= Q(name__icontains=w)
-    conditions = [When(name__icontains=w, then=1) for w in words]
-    related = (
-        Product.objects.filter(q, available=True, is_archived=False)
-        .exclude(id=product.id)
-        .exclude(name__iexact=product.name)
-        .annotate(
-            match_count=Sum(Case(*conditions, default=0, output_field=IntegerField()))
-        )
-        .order_by("-match_count")[:4]
-    )
+    # Exclude products with very similar names (same brand/model)
+    name_words = [w for w in product.name.lower().split() if len(w) > 2]
+    for word in name_words[:3]:
+        related = related.exclude(name__icontains=word)
+
+    # If too few from same category, backfill from other categories
+    related = related.order_by('-featured', '-created')[:4]
+    if len(related) < 4:
+        extra_ids = [p.id for p in related] + [product.id]
+        backfill = Product.objects.filter(
+            available=True, is_archived=False
+        ).exclude(id__in=extra_ids).order_by('-featured', '-created')[:4 - len(related)]
+        related = list(related) + list(backfill)
 
     spec_lines, warranty_info = _parse_description(product.description)
 
