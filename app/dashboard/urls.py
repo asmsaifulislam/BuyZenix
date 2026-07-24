@@ -82,6 +82,8 @@ urlpatterns = [
     path("tax-report/", views.admin_tax_report, name="admin_tax_report"),
     # Product Demand Dashboard
     path("demand-report/", views.admin_demand_report, name="admin_demand_report"),
+    # Visitor Analytics
+    path("visitor-analytics/", views.admin_visitor_analytics, name="admin_visitor_analytics"),
     # RBAC
     path("rbac/", rbac_groups, name="rbac_groups"),
     path("rbac/create/", rbac_group_create, name="rbac_group_create"),

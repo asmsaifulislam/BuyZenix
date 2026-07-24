@@ -224,6 +224,9 @@
       <a href="{% url 'dashboard:admin_demand_report' %}" class="{% if request.resolver_match.url_name == 'admin_demand_report' %}active{% endif %}">
         <span class="icon">📊</span> Demand Dashboard
       </a>
+      <a href="{% url 'dashboard:admin_visitor_analytics' %}" class="{% if request.resolver_match.url_name == 'admin_visitor_analytics' %}active{% endif %}">
+        <span class="icon">👥</span> Visitor Analytics
+      </a>
       <a href="{% url 'dashboard:admin_banners' %}" class="{% if request.resolver_match.url_name == 'admin_banners' %}active{% endif %}">
         <span class="icon">🖼️</span> Banners
       </a>
